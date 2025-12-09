@@ -75,8 +75,8 @@ function AdminDashboard() {
       } catch (err) {
         setErrorOrdenes(
           err.response?.data?.message ||
-            err.message ||
-            "Error al cargar las órdenes."
+          err.message ||
+          "Error al cargar las órdenes."
         );
         setCargandoOrdenes(false);
       }
@@ -95,8 +95,8 @@ function AdminDashboard() {
     } catch (err) {
       setErrorProductos(
         err.response?.data?.message ||
-          err.message ||
-          "Error al cargar los productos."
+        err.message ||
+        "Error al cargar los productos."
       );
       setCargandoProductos(false);
     }
@@ -116,6 +116,13 @@ function AdminDashboard() {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Debes iniciar sesión como admin para agregar productos.");
+      setMensaje(null);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("nombre", nombre);
     formData.append("descripcion", descripcion);
@@ -125,7 +132,10 @@ function AdminDashboard() {
 
     try {
       await axios.post(`${API_BASE}/api/productos/crear`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setMensaje("Producto agregado correctamente.");
@@ -139,8 +149,12 @@ function AdminDashboard() {
 
       fetchProductos();
     } catch (err) {
-      console.error(err);
-      setError("Error al agregar el producto.");
+      console.error("Error al agregar producto:", err);
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        "Error al agregar el producto."
+      );
       setMensaje(null);
     }
   };
@@ -174,8 +188,8 @@ function AdminDashboard() {
       console.error(err);
       setErrorOrdenes(
         err.response?.data?.message ||
-          err.message ||
-          "Error al actualizar el estado de la orden."
+        err.message ||
+        "Error al actualizar el estado de la orden."
       );
       setActualizando(false);
     }
@@ -233,8 +247,8 @@ function AdminDashboard() {
       console.error("Error al guardar producto editado:", err);
       alert(
         err.response?.data?.message ||
-          err.message ||
-          "Error al actualizar el producto."
+        err.message ||
+        "Error al actualizar el producto."
       );
       setGuardandoProducto(false);
     }
@@ -464,7 +478,7 @@ function AdminDashboard() {
                                     }
                                   >
                                     {actualizando &&
-                                    orden.estado !== "completado"
+                                      orden.estado !== "completado"
                                       ? "Actualizando..."
                                       : "Marcar entregado"}
                                   </Button>
