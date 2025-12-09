@@ -413,9 +413,7 @@ function AdminDashboard() {
                   <Card.Body>
                     <h4 className="mb-3 text-center">📦 Gestión de Pedidos</h4>
 
-                    {errorOrdenes && (
-                      <Alert variant="danger">{errorOrdenes}</Alert>
-                    )}
+                    {errorOrdenes && <Alert variant="danger">{errorOrdenes}</Alert>}
 
                     {cargandoOrdenes ? (
                       <div className="text-center py-4">
@@ -423,74 +421,82 @@ function AdminDashboard() {
                         <p className="mt-2 mb-0">Cargando órdenes...</p>
                       </div>
                     ) : ordenes.length === 0 ? (
-                      <Alert variant="info">
-                        No hay órdenes registradas todavía.
-                      </Alert>
+                      <Alert variant="info">No hay órdenes registradas todavía.</Alert>
                     ) : (
-                      <Table
-                        hover
-                        size="sm"
-                        className="align-middle w-100 mb-0"
-                      >
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Total</th>
-                            <th className="text-center">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ordenes.map((orden) => (
-                            <tr key={orden.id}>
-                              <td style={{ fontSize: "0.85rem" }}>{orden.id}</td>
-                              <td style={{ fontSize: "0.85rem" }}>
-                                {new Date(
-                                  orden.fechaCreacion
-                                ).toLocaleDateString()}
-                              </td>
-                              <td>
-                                <Badge
-                                  bg={getBadgeColor(orden.estado)}
-                                  style={{ fontSize: "0.7rem" }}
-                                >
-                                  {orden.estado.toUpperCase()}
-                                </Badge>
-                              </td>
-                              <td style={{ fontSize: "0.85rem" }}>
-                                {formatearMoneda(orden.total)}
-                              </td>
-                              <td
-                                style={{ fontSize: "0.85rem", minWidth: "160px" }}
-                                className="text-center"
-                              >
-                                <div className="d-flex flex-column flex-sm-row flex-wrap justify-content-center gap-2">
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    disabled={actualizando || orden.estado === "completado"}
-                                    onClick={() => handleCambiarEstado(orden.id, "completado")}
-                                  >
-                                    {actualizando && orden.estado !== "completado"
-                                      ? "Actualizando..."
-                                      : "Marcar entregado"}
-                                  </Button>
-
-                                  <Button
-                                    variant="danger"
-                                    size="sm"
-                                    disabled={actualizando || orden.estado === "cancelado"}
-                                    onClick={() => handleCambiarEstado(orden.id, "cancelado")}
-                                  >
-                                    Cancelar
-                                  </Button>
-                                </div>
-                              </td>
+                      // 💡 WRAPPER RESPONSIVE PARA LA TABLA
+                      <div className="table-responsive">
+                        <Table
+                          hover
+                          size="sm"
+                          className="align-middle w-100 mb-0"
+                        >
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Fecha</th>
+                              <th>Estado</th>
+                              <th>Total</th>
+                              <th className="text-center">Acciones</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </Table>
+                          </thead>
+                          <tbody>
+                            {ordenes.map((orden) => (
+                              <tr key={orden.id}>
+                                <td style={{ fontSize: "0.85rem" }}>{orden.id}</td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {new Date(orden.fechaCreacion).toLocaleDateString()}
+                                </td>
+                                <td>
+                                  <Badge
+                                    bg={getBadgeColor(orden.estado)}
+                                    style={{ fontSize: "0.7rem" }}
+                                  >
+                                    {orden.estado.toUpperCase()}
+                                  </Badge>
+                                </td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {formatearMoneda(orden.total)}
+                                </td>
+                                <td
+                                  className="text-center"
+                                  style={{ fontSize: "0.8rem", minWidth: 160 }}
+                                >
+                                  {/* 💡 FLEX CON WRAP PARA QUE NO SE SALGA */}
+                                  <div className="d-flex flex-column flex-md-row flex-wrap justify-content-center gap-2">
+                                    <Button
+                                      variant="success"
+                                      size="sm"
+                                      disabled={
+                                        actualizando || orden.estado === "completado"
+                                      }
+                                      onClick={() =>
+                                        handleCambiarEstado(orden.id, "completado")
+                                      }
+                                    >
+                                      {actualizando && orden.estado !== "completado"
+                                        ? "Actualizando..."
+                                        : "Marcar entregado"}
+                                    </Button>
+
+                                    <Button
+                                      variant="danger"
+                                      size="sm"
+                                      disabled={
+                                        actualizando || orden.estado === "cancelado"
+                                      }
+                                      onClick={() =>
+                                        handleCambiarEstado(orden.id, "cancelado")
+                                      }
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </div>
                     )}
                   </Card.Body>
                 </Card>
