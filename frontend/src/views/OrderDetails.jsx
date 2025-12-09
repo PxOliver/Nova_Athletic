@@ -22,23 +22,12 @@ function OrderDetails() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("Debes iniciar sesión para ver tu orden.");
-        }
-
-        const response = await axios.get(
-          `${API_BASE}/api/ordenes/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        // Endpoint público: no mandamos token
+        const response = await axios.get(`${API_BASE}/api/ordenes/${id}`);
         setOrder(response.data);
         setLoading(false);
       } catch (err) {
+        console.error(err);
         setError(
           err.response?.data?.message ||
             err.message ||
@@ -90,6 +79,22 @@ function OrderDetails() {
               {error}
             </Alert>
           </div>
+        </Container>
+      </section>
+    );
+  }
+
+  // Si por algún motivo no hay order pero tampoco error
+  if (!order) {
+    return (
+      <section style={{ paddingTop: "90px", paddingBottom: "40px" }}>
+        <Container
+          className="d-flex justify-content-center align-items-center"
+          style={{ minHeight: "calc(100vh - 130px)" }}
+        >
+          <Alert variant="warning" className="text-center fs-5">
+            No se encontró la orden.
+          </Alert>
         </Container>
       </section>
     );
