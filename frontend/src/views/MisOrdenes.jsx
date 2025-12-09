@@ -24,29 +24,44 @@ function MisOrdenes() {
     const cargarOrdenes = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("Debes iniciar sesión.");
+        console.log("TOKEN en MisOrdenes:", token);
 
-        const response = await axios.get(
-          `${API_BASE}/api/ordenes/usuario`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        if (!token) {
+          setError("Debes iniciar sesión para ver tus órdenes.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get(`${API_BASE}/api/ordenes/usuario`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        console.log("Respuesta /api/ordenes/usuario:", response.data);
 
         setOrdenes(response.data);
         setLoading(false);
       } catch (err) {
-        setError(
-          err.response?.data?.message ||
-          err.message ||
-          "Error al cargar tus órdenes"
-        );
+        console.error("Error al cargar órdenes:", err);
+
+        // Si el backend responde 401, puedes redirigir al login
+        if (err.response?.status === 401) {
+          setError("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.");
+          // Si prefieres, descomenta para redirigir:
+          // navigate("/login");
+        } else {
+          setError(
+            err.response?.data?.message ||
+              err.message ||
+              "Error al cargar tus órdenes"
+          );
+        }
+
         setLoading(false);
       }
     };
 
     cargarOrdenes();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -60,7 +75,9 @@ function MisOrdenes() {
   if (error) {
     return (
       <Container className="mt-5 pt-5">
-        <Alert variant="danger">{error}</Alert>
+        <Alert variant="danger" className="text-center">
+          {error}
+        </Alert>
       </Container>
     );
   }
@@ -83,10 +100,12 @@ function MisOrdenes() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: "10px"
+          gap: "10px",
         }}
       >
-        <span role="img" aria-label="box">📦</span>
+        <span role="img" aria-label="box">
+          📦
+        </span>
         Mis Órdenes
       </h2>
 
@@ -105,8 +124,12 @@ function MisOrdenes() {
                   padding: "10px",
                   transition: "0.3s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.03)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               >
                 <Card.Body className="d-flex flex-column align-items-center">
                   <h5 className="fw-bold mb-3">Orden #{orden.id}</h5>
@@ -123,8 +146,8 @@ function MisOrdenes() {
                         orden.estado === "completado"
                           ? "success"
                           : orden.estado === "cancelado"
-                            ? "danger"
-                            : "warning"
+                          ? "danger"
+                          : "warning"
                       }
                     >
                       {orden.estado}
