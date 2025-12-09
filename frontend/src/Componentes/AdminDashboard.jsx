@@ -461,24 +461,18 @@ function AdminDashboard() {
                               <td style={{ fontSize: "0.85rem" }}>
                                 {formatearMoneda(orden.total)}
                               </td>
-                              <td>
-                                <div className="d-flex flex-column flex-lg-row justify-content-center gap-2">
+                              <td
+                                style={{ fontSize: "0.85rem", minWidth: "160px" }}
+                                className="text-center"
+                              >
+                                <div className="d-flex flex-column flex-sm-row flex-wrap justify-content-center gap-2">
                                   <Button
                                     variant="success"
                                     size="sm"
-                                    disabled={
-                                      actualizando ||
-                                      orden.estado === "completado"
-                                    }
-                                    onClick={() =>
-                                      handleCambiarEstado(
-                                        orden.id,
-                                        "completado"
-                                      )
-                                    }
+                                    disabled={actualizando || orden.estado === "completado"}
+                                    onClick={() => handleCambiarEstado(orden.id, "completado")}
                                   >
-                                    {actualizando &&
-                                      orden.estado !== "completado"
+                                    {actualizando && orden.estado !== "completado"
                                       ? "Actualizando..."
                                       : "Marcar entregado"}
                                   </Button>
@@ -486,16 +480,8 @@ function AdminDashboard() {
                                   <Button
                                     variant="danger"
                                     size="sm"
-                                    disabled={
-                                      actualizando ||
-                                      orden.estado === "cancelado"
-                                    }
-                                    onClick={() =>
-                                      handleCambiarEstado(
-                                        orden.id,
-                                        "cancelado"
-                                      )
-                                    }
+                                    disabled={actualizando || orden.estado === "cancelado"}
+                                    onClick={() => handleCambiarEstado(orden.id, "cancelado")}
                                   >
                                     Cancelar
                                   </Button>
