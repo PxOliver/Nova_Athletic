@@ -20,8 +20,6 @@ public class Producto {
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    // IMPORTANTE: sin @Lob, solo TEXT
-    @JsonIgnore // si no quieres mandarla en el JSON de respuestas
     @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
