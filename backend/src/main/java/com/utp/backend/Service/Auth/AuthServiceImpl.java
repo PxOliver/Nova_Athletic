@@ -34,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String login(String username, String password) {
 
+        // 1. Buscar usuario en BD
         Usuario user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -41,11 +42,14 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("La cuenta no ha sido verificada");
         }
 
+        // 2. Autenticar credenciales
         var authToken = new UsernamePasswordAuthenticationToken(username, password);
         var authentication = authenticationManager.authenticate(authToken);
 
+        // 3. Generar JWT con username + rol del usuario
         String token = jwtUtils.generateToken(
-                ((UserDetails) authentication.getPrincipal()).getUsername()
+                ((UserDetails) authentication.getPrincipal()).getUsername(),
+                user.getRol()  // 👈 aquí va "ADMIN", "USER", etc. desde la BD
         );
 
         return token;
@@ -74,6 +78,8 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(email);
         user.setFechaRegistro(LocalDateTime.now());
         user.setEnabled(false);
+        // Opcional: asignar rol por defecto si no lo manejas en la BD
+        // user.setRol("USER");
 
         userRepo.save(user);
 
