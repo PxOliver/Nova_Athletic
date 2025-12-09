@@ -1,10 +1,12 @@
 package com.utp.backend.Config;
 
 import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -37,10 +39,28 @@ public class SecurityFilterChainConfig {
             .sessionManagement(session -> session
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+
+                    // ======== AUTH PÚBLICO ========
                     .requestMatchers("/api/auth/**").permitAll()
+
+                    // ======== PRODUCTOS / IMÁGENES PÚBLICOS ========
                     .requestMatchers("/api/productos/**").permitAll()
                     .requestMatchers("/api/uploads/**").permitAll()
-                    .requestMatchers("/api/ordenes/**").permitAll()
+
+                    // ======== ÓRDENES ========
+                    // Crear orden: requiere estar logueado
+                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
+
+                    // Órdenes del usuario logueado
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
+
+                    // Todas las órdenes → solo ADMIN (AdminDashboard)
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
+
+                    // Detalle de una orden por id → público (OrderDetails.jsx)
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
+
+                    // Cualquier otra cosa requiere login
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
