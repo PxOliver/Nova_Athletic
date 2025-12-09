@@ -20,6 +20,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
+    private JwtUtils jwtUtils;
+
+    @Autowired
     private UserDetailsService userDetailsService;
 
     @Override
@@ -31,11 +34,12 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         String token = getTokenFromRequest(request);
 
-        if (token != null && JwtUtils.validateToken(token)) {
+        if (token != null && jwtUtils.validateToken(token)) {
 
-            String username = JwtUtils.getUsernameFromToken(token).orElse(null);
+            String username = jwtUtils.getUsernameFromToken(token).orElse(null);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 var userDetails = userDetailsService.loadUserByUsername(username);
 

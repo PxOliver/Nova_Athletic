@@ -44,6 +44,9 @@ public class OrdenController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
     // ================== CREAR ORDEN ==================
     @PostMapping
     public ResponseEntity<?> crearOrden(
@@ -59,7 +62,8 @@ public class OrdenController {
 
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
-            String username = JwtUtils.getUsernameFromToken(token)
+            // ✔ NUEVO: usar objeto jwtUtils (no estático)
+            String username = jwtUtils.getUsernameFromToken(token)
                     .orElseThrow(() -> new RuntimeException("Token inválido"));
 
             Usuario usuario = authService.findByUsername(username);

@@ -3,23 +3,31 @@ package com.utp.backend.Util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
+@Component
 public class JwtUtils {
 
-    private static final SecretKey SECRET_KEY = Jwts.SIG.HS256.key().build();
+    private final SecretKey secretKey;
     private static final String ISSUER = "server";
 
-    private JwtUtils() {}
+    public JwtUtils(@Value("${jwt.secret}") String secret) {
+        // HS256 requiere al menos 32 caracteres
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
-    public static boolean validateToken(String token) {
+    public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith(SECRET_KEY)
+                    .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token);
             return true;
@@ -29,22 +37,21 @@ public class JwtUtils {
         }
     }
 
-    public static Optional<String> getUsernameFromToken(String token) {
+    public Optional<String> getUsernameFromToken(String token) {
         try {
             Claims claims = Jwts.parser()
-                    .verifyWith(SECRET_KEY)
+                    .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
 
             return Optional.ofNullable(claims.getSubject());
-
         } catch (Exception e) {
             return Optional.empty();
         }
     }
 
-    public static String generateToken(String username) {
+    public String generateToken(String username) {
 
         Date ahora = new Date();
         Date expiracion = new Date(ahora.getTime() + (60 * 60 * 1000)); // 1 hora
@@ -55,7 +62,7 @@ public class JwtUtils {
                 .subject(username)
                 .issuedAt(ahora)
                 .expiration(expiracion)
-                .signWith(SECRET_KEY)
+                .signWith(secretKey)
                 .compact();
     }
 }
