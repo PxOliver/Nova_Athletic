@@ -40,25 +40,39 @@ public class SecurityFilterChainConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // PUBLICO
+                        // ========================
+                        // PÚBLICO
+                        // ========================
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/productos/**").permitAll()
                         .requestMatchers("/api/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
 
-                        // USUARIO AUTENTICADO (deben ir ANTES)
+                        // ========================
+                        // USUARIO AUTENTICADO
+                        // ========================
                         .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
 
+                        // ========================
                         // ADMIN
-                        .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
+                        // ========================
+                        // listado de TODAS las órdenes
+                        .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
+                        // endpoint de gestión (cambiar estado)
                         .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
+                        // si algún día usas /api/ordenes/admin
+                        .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
 
-                        // **PÚBLICO SOLO PARA ORDEN POR ID**
+                        // ========================
+                        // ORDEN POR ID
+                        // ========================
+                        // ejemplo: GET /api/ordenes/1
                         .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
 
-                        // CUALQUIER OTRA COSA
+                        // ========================
+                        // RESTO DE RUTAS
+                        // ========================
                         .anyRequest().authenticated())
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
