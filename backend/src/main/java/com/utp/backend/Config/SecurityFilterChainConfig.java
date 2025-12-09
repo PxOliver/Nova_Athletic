@@ -44,7 +44,7 @@ public class SecurityFilterChainConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/productos/**").permitAll()
                     .requestMatchers("/api/uploads/**").permitAll()
-                    // Detalle de orden por id (página de agradecimiento / orden/:id)
+                    // Detalle de orden por id (página de agradecimiento /orden/:id)
                     .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
 
                     // ---------- USUARIO AUTENTICADO ----------
