@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/ordenes")
-@CrossOrigin(origins = "http://localhost:3000")
 public class OrdenController {
 
     @Autowired
@@ -37,7 +36,7 @@ public class OrdenController {
     @Autowired
     private AuthService authService;
 
-    // ========== CREAR ORDEN ==========
+    // ========== CREAR ORDEN ========== 
     @PostMapping
     public ResponseEntity<OrdenResponseDto> crearOrden(
             @RequestBody CrearOrdenDto request,
@@ -196,7 +195,7 @@ public class OrdenController {
 
         return new OrdenResponseDto(
                 pedido.getId(),
-                pedido.getFecha(),      // se mapea a fechaCreacion en el DTO
+                pedido.getFecha(),
                 pedido.getEstado(),
                 dirDto,
                 metodoPago,

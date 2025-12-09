@@ -24,8 +24,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
     @Autowired
-    private PasswordEncoder passwordEncoder; 
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private UserRepo userRepo;
 
@@ -48,8 +50,10 @@ public class AuthServiceImpl implements AuthService {
         if (!user.isEnabled()) {
             throw new RuntimeException("La cuenta no ha sido verificada");
         }
+
         var authToken = new UsernamePasswordAuthenticationToken(username, password);
         var authenticate = authenticationManager.authenticate(authToken);
+
         return JwtUtils.generateToken(((UserDetails) (authenticate.getPrincipal())).getUsername());
     }
 
@@ -65,23 +69,27 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String signUp(String nombre, String username, String password, String email) {
 
+        // 👇 IMPORTANTE: estos textos deben coincidir con lo que revisa AuthController
         if (userRepo.existsByUsername(username)) {
-            throw new RuntimeException("El Username ya existe");
+            throw new RuntimeException("Username already exists");
         }
 
         if (userRepo.existsByEmail(email)) {
-            throw new RuntimeException("El correo electrónico ya existe");
+            throw new RuntimeException("Email already exists");
         }
 
         Usuario user = new Usuario();
         user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(password)); 
+        user.setPassword(passwordEncoder.encode(password));
         user.setNombre(nombre);
         user.setEmail(email);
         user.setFechaRegistro(LocalDateTime.now());
         user.setEnabled(false);
+
         user = userRepo.save(user);
 
+        // La URL real se resuelve en RegistrationCompleteEventListener con APP_URL,
+        // así que aquí no importa el segundo parámetro.
         eventPublisher.publishEvent(new RegistrationCompleteEvent(user, "..."));
 
         return "Verification email sent";
@@ -103,7 +111,6 @@ public class AuthServiceImpl implements AuthService {
 
         VerificationToken token = tokenRepository.findByToken(theToken);
         if (token == null) {
-
             System.out.println("Token no encontrado en la base de datos.");
             return "Token de verificación no válido";
         }
@@ -121,7 +128,6 @@ public class AuthServiceImpl implements AuthService {
 
         user.setEnabled(true);
         try {
-
             userRepo.save(user);
             System.out.println("Usuario actualizado. Nuevo estado: " + user.isEnabled());
 
@@ -132,8 +138,8 @@ public class AuthServiceImpl implements AuthService {
             e.printStackTrace();
             return "Error al actualizar usuario";
         }
-        
     }
+
     @Override
     public Usuario findByUsername(String username) {
         return userRepo.findByUsername(username)

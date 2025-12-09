@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -26,7 +27,12 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
 
     @Autowired
     private JavaMailSender mailSender;
+
     private Usuario theUser;
+
+    // URL del backend (Render) para armar el enlace del correo
+    @Value("${APP_URL:http://localhost:8080}")
+    private String appUrl;
 
     @Override
     public void onApplicationEvent(RegistrationCompleteEvent event) {
@@ -34,7 +40,9 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
         theUser = event.getUser();
         String verificationToken = UUID.randomUUID().toString();
         userService.saveUserVerificationToken(theUser, verificationToken);
-        String url = "http://localhost:8080/api/auth/verifyEmail?token=" + verificationToken;
+
+        // Ej: https://nova-athletic-1.onrender.com/api/auth/verifyEmail?token=...
+        String url = appUrl + "/api/auth/verifyEmail?token=" + verificationToken;
 
         try {
             sendVerificationEmail(url);
@@ -44,6 +52,7 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
 
         log.info("Haga clic en el enlace para verificar su registro:  {}", url);
     }
+
     public void sendVerificationEmail(String url) throws MessagingException, UnsupportedEncodingException {
         String subject = "Verificación de Correo Electrónico";
         String senderName = "Servicio de Registro de Usuarios";
@@ -59,7 +68,7 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
         messageHelper.setFrom("pruebatech370@gmail.com", senderName);
         messageHelper.setTo(theUser.getEmail());
         messageHelper.setSubject(subject);
-        messageHelper.setText(mailContent, true); 
+        messageHelper.setText(mailContent, true);
         mailSender.send(message);
     }
 }

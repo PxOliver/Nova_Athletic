@@ -1,6 +1,8 @@
 package com.utp.backend.Config;
 
 import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +21,10 @@ public class SecurityFilterChainConfig {
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
+    // URL del frontend (Render) con fallback a localhost
+    @Value("${FRONTEND_URL:http://localhost:3000}")
+    private String frontendUrl;
+
     public SecurityFilterChainConfig(AuthenticationEntryPoint authenticationEntryPoint,
             JWTAuthenticationFilter jwtAuthenticationFilter) {
         this.authenticationEntryPoint = authenticationEntryPoint;
@@ -27,7 +33,8 @@ public class SecurityFilterChainConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        httpSecurity
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable);
 
         httpSecurity.authorizeHttpRequests(
@@ -40,12 +47,12 @@ public class SecurityFilterChainConfig {
                         .requestMatchers("/api/productos/actualizar/**").permitAll()
                         .requestMatchers("/api/uploads/**").permitAll()
                         .anyRequest().authenticated())
-
                 .exceptionHandling(
                         exceptionConfig -> exceptionConfig.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(
                         sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return httpSecurity.build();
     }
 
@@ -53,7 +60,8 @@ public class SecurityFilterChainConfig {
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        // Permitimos el front en Render y localhost para desarrollo
+        configuration.setAllowedOrigins(Arrays.asList(frontendUrl, "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

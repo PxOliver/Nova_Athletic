@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +33,10 @@ public class AuthController {
 
     @Autowired
     private AuthServiceImpl userService;
+
+    // URL del FRONTEND (Render) con fallback a localhost
+    @Value("${FRONTEND_URL:http://localhost:3000}")
+    private String frontendUrl;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@RequestBody AuthRequestDto authRequestDto) {
@@ -107,7 +112,7 @@ public class AuthController {
 
             if (theToken == null) {
                 System.out.println("Token no encontrado");
-                response.sendRedirect("http://localhost:3000/verification?status=invalid-token");
+                response.sendRedirect(frontendUrl + "/verification?status=invalid-token");
                 return;
             }
 
@@ -115,18 +120,18 @@ public class AuthController {
             System.out.println("Resultado de la validación: " + result);
             switch (result) {
                 case "valido":
-                    response.sendRedirect("http://localhost:3000/verification?status=success");
+                    response.sendRedirect(frontendUrl + "/verification?status=success");
                     break;
                 case "expired":
-                    response.sendRedirect("http://localhost:3000/verification?status=expired");
+                    response.sendRedirect(frontendUrl + "/verification?status=expired");
                     break;
                 default:
-                    response.sendRedirect("http://localhost:3000/verification?status=invalid-token");
+                    response.sendRedirect(frontendUrl + "/verification?status=invalid-token");
             }
         } catch (Exception e) {
             System.out.println("Error durante la verificación: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect("http://localhost:3000/verification?status=error");
+            response.sendRedirect(frontendUrl + "/verification?status=error");
         }
     }
 
