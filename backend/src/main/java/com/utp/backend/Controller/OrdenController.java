@@ -51,10 +51,8 @@ public class OrdenController {
                         .body("Falta Authorization");
             }
 
-            // Obtener token sin "Bearer "
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
-            // → MÉTODO ESTÁTICO COMO EN TU JWTUTILS
             String username = JwtUtils.getUsernameFromToken(token)
                     .orElseThrow(() -> new RuntimeException("Token inválido"));
 
@@ -78,7 +76,7 @@ public class OrdenController {
 
             pedidoRepository.save(pedido);
 
-            // Procesar detalles
+            // Guardar detalles
             List<Detallepedido> detalles = new ArrayList<>();
 
             for (OrdenItemDto item : request.items()) {
@@ -108,7 +106,7 @@ public class OrdenController {
         }
     }
 
-    // ================== OBTENER ORDEN POR ID (PÚBLICO) ==================
+    // ================== OBTENER ORDEN POR ID ==================
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerOrden(@PathVariable Long id) {
 
@@ -125,6 +123,28 @@ public class OrdenController {
         OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
 
         return ResponseEntity.ok(dto);
+    }
+
+    // ================== OBTENER ÓRDENES DEL USUARIO AUTENTICADO ==================
+    @GetMapping("/usuario")
+    public ResponseEntity<?> obtenerOrdenesUsuario(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Falta Authorization Header");
+        }
+
+        String token = authorizationHeader.replace("Bearer ", "").trim();
+
+        String username = JwtUtils.getUsernameFromToken(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        Usuario usuario = authService.findByUsername(username);
+
+        List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuario.getId());
+
+        return ResponseEntity.ok(pedidos);
     }
 
     // ================== MAPPER ==================
