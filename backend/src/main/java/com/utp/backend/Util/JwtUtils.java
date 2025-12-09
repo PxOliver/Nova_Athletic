@@ -20,7 +20,7 @@ public class JwtUtils {
     private static final String ISSUER = "server";
 
     public JwtUtils(@Value("${jwt.secret}") String secret) {
-        // HS256 requiere al menos 32 caracteres
+
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
