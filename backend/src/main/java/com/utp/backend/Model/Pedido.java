@@ -37,7 +37,7 @@ public class Pedido {
     private BigDecimal costoEnvio;
 
     @Column(nullable = false, length = 30)
-    private String estado; // pendiente, completado, cancelado, etc.
+    private String estado;
 
     @Column(nullable = false)
     private String direccion;
