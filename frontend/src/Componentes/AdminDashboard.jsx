@@ -75,8 +75,8 @@ function AdminDashboard() {
       } catch (err) {
         setErrorOrdenes(
           err.response?.data?.message ||
-          err.message ||
-          "Error al cargar las órdenes."
+            err.message ||
+            "Error al cargar las órdenes."
         );
         setCargandoOrdenes(false);
       }
@@ -95,8 +95,8 @@ function AdminDashboard() {
     } catch (err) {
       setErrorProductos(
         err.response?.data?.message ||
-        err.message ||
-        "Error al cargar los productos."
+          err.message ||
+          "Error al cargar los productos."
       );
       setCargandoProductos(false);
     }
@@ -152,8 +152,8 @@ function AdminDashboard() {
       console.error("Error al agregar producto:", err);
       setError(
         err.response?.data?.message ||
-        err.message ||
-        "Error al agregar el producto."
+          err.message ||
+          "Error al agregar el producto."
       );
       setMensaje(null);
     }
@@ -188,8 +188,8 @@ function AdminDashboard() {
       console.error(err);
       setErrorOrdenes(
         err.response?.data?.message ||
-        err.message ||
-        "Error al actualizar el estado de la orden."
+          err.message ||
+          "Error al actualizar el estado de la orden."
       );
       setActualizando(false);
     }
@@ -247,8 +247,8 @@ function AdminDashboard() {
       console.error("Error al guardar producto editado:", err);
       alert(
         err.response?.data?.message ||
-        err.message ||
-        "Error al actualizar el producto."
+          err.message ||
+          "Error al actualizar el producto."
       );
       setGuardandoProducto(false);
     }
@@ -258,18 +258,27 @@ function AdminDashboard() {
     <>
       <MyNavbar />
 
-      <section style={{ paddingTop: "90px", paddingBottom: "40px" }}>
+      {/* Fondo suave + separación del navbar */}
+      <section
+        style={{
+          paddingTop: "90px",
+          paddingBottom: "40px",
+          backgroundColor: "#f8f9fa",
+          minHeight: "100vh",
+        }}
+      >
         <Container className="d-flex justify-content-center">
+          {/* Limita el ancho máximo del panel */}
           <div style={{ maxWidth: "1200px", width: "100%" }}>
             <h2 className="fw-bold mb-4 text-center">
               🛠 Panel de Administración
             </h2>
 
-            <Row className="g-4 justify-content-center">
+            <Row className="g-4 justify-content-center align-items-stretch">
               {/* ------------ CARD 1: AGREGAR PRODUCTO ------------ */}
-              <Col lg={4} md={6}>
-                <Card className="shadow-sm border-0 h-100">
-                  <Card.Body>
+              <Col lg={4} md={6} className="d-flex">
+                <Card className="shadow-sm border-0 flex-fill d-flex flex-column">
+                  <Card.Body className="d-flex flex-column">
                     <h4 className="mb-3 text-center">
                       🛒 Agregar Nuevo Producto
                     </h4>
@@ -277,7 +286,7 @@ function AdminDashboard() {
                     {mensaje && <Alert variant="success">{mensaje}</Alert>}
                     {error && <Alert variant="danger">{error}</Alert>}
 
-                    <Form onSubmit={handleSubmitProducto}>
+                    <Form onSubmit={handleSubmitProducto} className="mt-2">
                       <Form.Group className="mb-3">
                         <Form.Label>Nombre del producto</Form.Label>
                         <Form.Control
@@ -334,7 +343,7 @@ function AdminDashboard() {
                         />
                       </Form.Group>
 
-                      <div className="d-grid">
+                      <div className="d-grid mt-auto">
                         <Button variant="success" type="submit">
                           Guardar Producto
                         </Button>
@@ -345,9 +354,9 @@ function AdminDashboard() {
               </Col>
 
               {/* ------------ CARD 2: LISTA DE PRODUCTOS ------------ */}
-              <Col lg={4} md={6}>
-                <Card className="shadow-sm border-0 h-100">
-                  <Card.Body>
+              <Col lg={4} md={6} className="d-flex">
+                <Card className="shadow-sm border-0 flex-fill d-flex flex-column">
+                  <Card.Body className="d-flex flex-column">
                     <h4 className="mb-3 text-center">📋 Productos</h4>
 
                     {errorProductos && (
@@ -355,62 +364,70 @@ function AdminDashboard() {
                     )}
 
                     {cargandoProductos ? (
-                      <div className="text-center py-4">
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <Spinner animation="border" />
                         <p className="mt-2 mb-0">Cargando productos...</p>
                       </div>
                     ) : productos.length === 0 ? (
-                      <Alert variant="info">
+                      <Alert variant="info" className="mt-2">
                         No hay productos registrados todavía.
                       </Alert>
                     ) : (
-                      <Table
-                        hover
-                        size="sm"
-                        className="align-middle w-100 mb-0"
-                      >
-                        <thead>
-                          <tr>
-                            <th>Nombre</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th className="text-center">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {productos.map((p) => (
-                            <tr key={p.id}>
-                              <td style={{ maxWidth: 130 }}>
-                                <span style={{ fontSize: "0.85rem" }}>
-                                  {p.nombre}
-                                </span>
-                              </td>
-                              <td style={{ fontSize: "0.85rem" }}>
-                                {formatearMoneda(p.precio)}
-                              </td>
-                              <td style={{ fontSize: "0.85rem" }}>{p.stock}</td>
-                              <td className="text-center">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => manejarAbrirEditarProducto(p)}
-                                >
-                                  Editar
-                                </Button>
-                              </td>
+                      <div className="table-responsive mt-2">
+                        <Table
+                          hover
+                          size="sm"
+                          className="align-middle w-100 mb-0"
+                        >
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Precio</th>
+                              <th>Stock</th>
+                              <th className="text-center">Acciones</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </Table>
+                          </thead>
+                          <tbody>
+                            {productos.map((p) => (
+                              <tr key={p.id}>
+                                <td style={{ maxWidth: 130 }}>
+                                  <span style={{ fontSize: "0.85rem" }}>
+                                    {p.nombre}
+                                  </span>
+                                </td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {formatearMoneda(p.precio)}
+                                </td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {p.stock}
+                                </td>
+                                <td className="text-center">
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => manejarAbrirEditarProducto(p)}
+                                  >
+                                    Editar
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </div>
                     )}
                   </Card.Body>
                 </Card>
               </Col>
 
               {/* ------------ CARD 3: GESTIÓN DE PEDIDOS ------------ */}
-              <Col lg={4} md={8}>
-                <Card className="shadow-sm border-0 h-100">
-                  <Card.Body>
+              <Col lg={4} md={8} className="d-flex">
+                <Card className="shadow-sm border-0 flex-fill d-flex flex-column">
+                  {/* overflowX por si la tabla se hace muy ancha */}
+                  <Card.Body
+                    className="d-flex flex-column"
+                    style={{ overflowX: "auto" }}
+                  >
                     <h4 className="mb-3 text-center">📦 Gestión de Pedidos</h4>
 
                     {errorOrdenes && (
@@ -418,93 +435,101 @@ function AdminDashboard() {
                     )}
 
                     {cargandoOrdenes ? (
-                      <div className="text-center py-4">
+                      <div className="text-center py-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <Spinner animation="border" />
                         <p className="mt-2 mb-0">Cargando órdenes...</p>
                       </div>
                     ) : ordenes.length === 0 ? (
-                      <Alert variant="info">
+                      <Alert variant="info" className="mt-2">
                         No hay órdenes registradas todavía.
                       </Alert>
                     ) : (
-                      <Table
-                        hover
-                        size="sm"
-                        className="align-middle w-100 mb-0"
-                      >
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Total</th>
-                            <th className="text-center">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ordenes.map((orden) => (
-                            <tr key={orden.id}>
-                              <td style={{ fontSize: "0.85rem" }}>{orden.id}</td>
-                              <td style={{ fontSize: "0.85rem" }}>
-                                {new Date(
-                                  orden.fechaCreacion
-                                ).toLocaleDateString()}
-                              </td>
-                              <td>
-                                <Badge
-                                  bg={getBadgeColor(orden.estado)}
-                                  style={{ fontSize: "0.7rem" }}
-                                >
-                                  {orden.estado.toUpperCase()}
-                                </Badge>
-                              </td>
-                              <td style={{ fontSize: "0.85rem" }}>
-                                {formatearMoneda(orden.total)}
-                              </td>
-                              <td>
-                                <div className="d-flex flex-column flex-lg-row justify-content-center gap-2">
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    disabled={
-                                      actualizando ||
-                                      orden.estado === "completado"
-                                    }
-                                    onClick={() =>
-                                      handleCambiarEstado(
-                                        orden.id,
-                                        "completado"
-                                      )
-                                    }
-                                  >
-                                    {actualizando &&
-                                      orden.estado !== "completado"
-                                      ? "Actualizando..."
-                                      : "Marcar entregado"}
-                                  </Button>
-
-                                  <Button
-                                    variant="danger"
-                                    size="sm"
-                                    disabled={
-                                      actualizando ||
-                                      orden.estado === "cancelado"
-                                    }
-                                    onClick={() =>
-                                      handleCambiarEstado(
-                                        orden.id,
-                                        "cancelado"
-                                      )
-                                    }
-                                  >
-                                    Cancelar
-                                  </Button>
-                                </div>
-                              </td>
+                      <div className="table-responsive mt-2">
+                        <Table
+                          hover
+                          size="sm"
+                          className="align-middle w-100 mb-0"
+                        >
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Fecha</th>
+                              <th>Estado</th>
+                              <th>Total</th>
+                              <th className="text-center">Acciones</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </Table>
+                          </thead>
+                          <tbody>
+                            {ordenes.map((orden) => (
+                              <tr key={orden.id}>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {orden.id}
+                                </td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {new Date(
+                                    orden.fechaCreacion
+                                  ).toLocaleDateString()}
+                                </td>
+                                <td>
+                                  <Badge
+                                    bg={getBadgeColor(orden.estado)}
+                                    style={{ fontSize: "0.7rem" }}
+                                  >
+                                    {orden.estado.toUpperCase()}
+                                  </Badge>
+                                </td>
+                                <td style={{ fontSize: "0.85rem" }}>
+                                  {formatearMoneda(orden.total)}
+                                </td>
+                                <td
+                                  className="text-center"
+                                  style={{ fontSize: "0.8rem", minWidth: 170 }}
+                                >
+                                  {/* Botones que se acomodan sin salirse del card */}
+                                  <div className="d-flex flex-column flex-md-row flex-wrap justify-content-center gap-2">
+                                    <Button
+                                      variant="success"
+                                      size="sm"
+                                      disabled={
+                                        actualizando ||
+                                        orden.estado === "completado"
+                                      }
+                                      onClick={() =>
+                                        handleCambiarEstado(
+                                          orden.id,
+                                          "completado"
+                                        )
+                                      }
+                                    >
+                                      {actualizando &&
+                                      orden.estado !== "completado"
+                                        ? "Actualizando..."
+                                        : "Marcar entregado"}
+                                    </Button>
+
+                                    <Button
+                                      variant="danger"
+                                      size="sm"
+                                      disabled={
+                                        actualizando ||
+                                        orden.estado === "cancelado"
+                                      }
+                                      onClick={() =>
+                                        handleCambiarEstado(
+                                          orden.id,
+                                          "cancelado"
+                                        )
+                                      }
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </div>
                     )}
                   </Card.Body>
                 </Card>
