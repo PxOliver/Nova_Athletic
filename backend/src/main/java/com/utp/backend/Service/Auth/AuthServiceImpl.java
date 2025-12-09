@@ -29,7 +29,6 @@ public class AuthServiceImpl implements AuthService {
     @Autowired private UserRepo userRepo;
     @Autowired private VerificationTokenRepository tokenRepository;
     @Autowired private ApplicationEventPublisher eventPublisher;
-    @Autowired private JwtUtils jwtUtils;
 
     @Override
     public String login(String username, String password) {
@@ -44,12 +43,14 @@ public class AuthServiceImpl implements AuthService {
         var authToken = new UsernamePasswordAuthenticationToken(username, password);
         var authentication = authenticationManager.authenticate(authToken);
 
-        return jwtUtils.generateToken(((UserDetails) authentication.getPrincipal()).getUsername());
+        return JwtUtils.generateToken(
+                ((UserDetails) authentication.getPrincipal()).getUsername()
+        );
     }
 
     @Override
     public String verifyToken(String token) {
-        return jwtUtils.getUsernameFromToken(token)
+        return JwtUtils.getUsernameFromToken(token)
                 .orElseThrow(() -> new RuntimeException("Token inválido"));
     }
 
