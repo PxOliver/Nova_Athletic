@@ -10,10 +10,9 @@ import javax.crypto.SecretKey;
 import org.apache.commons.lang3.time.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j // Anotación para habilitar un logger (registro de logs) en esta clase.
+@Slf4j
 public class JwtUtils {
 
-  // Clave secreta utilizada para firmar y verificar los tokens JWT.
   private static final SecretKey secretKey = Jwts.SIG.HS256.key().build();
 
   private static final String ISSUER = "server";
@@ -22,7 +21,7 @@ public class JwtUtils {
   }
 
   public static boolean validateToken(String jwtToken) {
-    return parseToken(jwtToken).isPresent(); // Llama a parseToken y verifica si devuelve un objeto presente.
+    return parseToken(jwtToken).isPresent();
   }
 
   private static Optional<Claims> parseToken(String jwtToken) {

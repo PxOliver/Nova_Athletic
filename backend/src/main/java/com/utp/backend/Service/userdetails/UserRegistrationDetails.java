@@ -7,8 +7,6 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-// Anotación de Lombok que genera automáticamente getters, setters, 
-// métodos equals, hashCode y toString, reduciendo el código boilerplate.
 @Data 
 public class UserRegistrationDetails implements UserDetails {
 
