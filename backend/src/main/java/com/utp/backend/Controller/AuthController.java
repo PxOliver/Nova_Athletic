@@ -7,7 +7,6 @@ import com.utp.backend.token.VerificationTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,8 +33,7 @@ public class AuthController {
     @Autowired
     private AuthServiceImpl userService;
 
-    // URL del FRONTEND (Render) con fallback a localhost
-    @Value("${FRONTEND_URL:http://localhost:3000}")
+    @Value("${app.frontend.url}")
     private String frontendUrl;
 
     @PostMapping("/login")

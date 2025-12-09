@@ -1,19 +1,22 @@
 package com.utp.backend.listener;
 
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import com.utp.backend.Model.Usuario;
 import com.utp.backend.Service.Auth.AuthServiceImpl;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,17 +25,18 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
 
     private static final Logger log = LoggerFactory.getLogger(RegistrationCompleteEventListener.class);
 
-    @Autowired
-    private AuthServiceImpl userService;
+    private final AuthServiceImpl userService;
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${sendgrid.api.key}")
+    private String sendgridApiKey;
+
+    @Value("${mail.from}")
+    private String mailFrom;
+
+    @Value("${app.backend.url}")
+    private String backendUrl;
 
     private Usuario theUser;
-
-    // URL del backend (Render) para armar el enlace del correo
-    @Value("${APP_URL:http://localhost:8080}")
-    private String appUrl;
 
     @Override
     public void onApplicationEvent(RegistrationCompleteEvent event) {
@@ -41,34 +45,44 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
         String verificationToken = UUID.randomUUID().toString();
         userService.saveUserVerificationToken(theUser, verificationToken);
 
-        // Ej: https://nova-athletic-1.onrender.com/api/auth/verifyEmail?token=...
-        String url = appUrl + "/api/auth/verifyEmail?token=" + verificationToken;
+        String url = backendUrl + "/api/auth/verifyEmail?token=" + verificationToken;
 
         try {
             sendVerificationEmail(url);
-        } catch (MessagingException | UnsupportedEncodingException e) {
+        } catch (IOException e) {
+            log.error("Error enviando correo de verificación", e);
             throw new RuntimeException(e);
         }
 
         log.info("Haga clic en el enlace para verificar su registro:  {}", url);
     }
 
-    public void sendVerificationEmail(String url) throws MessagingException, UnsupportedEncodingException {
+    public void sendVerificationEmail(String url) throws IOException, UnsupportedEncodingException {
         String subject = "Verificación de Correo Electrónico";
         String senderName = "Servicio de Registro de Usuarios";
+
         String mailContent = "<p>Hola, " + theUser.getNombre() + ",</p>"
                 + "<p>Gracias por registrarte con nosotros.</p>"
                 + "<p>Por favor, haz clic en el enlace a continuación para completar tu registro:</p>"
                 + "<a href=\"" + url + "\">Verifica tu correo electrónico para activar tu cuenta</a>"
-                + "<p>Gracias,<br>Servicio de Registro de Usuarios</p>";
+                + "<p>Gracias,<br>" + senderName + "</p>";
 
-        MimeMessage message = mailSender.createMimeMessage();
-        var messageHelper = new MimeMessageHelper(message);
+        Email from = new Email(mailFrom, senderName);
+        Email to = new Email(theUser.getEmail());
+        Content content = new Content("text/html", mailContent);
 
-        messageHelper.setFrom("pruebatech370@gmail.com", senderName);
-        messageHelper.setTo(theUser.getEmail());
-        messageHelper.setSubject(subject);
-        messageHelper.setText(mailContent, true);
-        mailSender.send(message);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendgridApiKey);
+        Request request = new Request();
+
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+
+        log.info("SendGrid response status: {}", response.getStatusCode());
+        log.debug("SendGrid body: {}", response.getBody());
     }
 }
