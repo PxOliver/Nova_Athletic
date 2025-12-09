@@ -51,6 +51,9 @@ public class SecurityFilterChainConfig {
                     // Catálogo público
                     .requestMatchers("/api/productos/**").permitAll()
 
+                    // Órdenes públicas (GET /api/ordenes/1, /api/ordenes, etc.)
+                    .requestMatchers("/api/ordenes/**").permitAll()
+
                     // Imágenes/archivos públicos
                     .requestMatchers("/api/uploads/**").permitAll()
 
