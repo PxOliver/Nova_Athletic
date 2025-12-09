@@ -1,16 +1,8 @@
-🛍️ Tienda Deportiva – Fullstack App (Spring Boot + React + Supabase + Render)
+🛍️ Tienda Deportiva – Fullstack App
+(Spring Boot + React + Supabase + Render)
 
-Este proyecto es una tienda deportiva completa que permite a usuarios registrarse, comprar productos, gestionar pedidos y a administradores administrar inventario y órdenes.
-
-Incluye:
-
-Backend: Spring Boot 3 + Spring Security + JWT + JPA + PostgreSQL
-
-Base de datos: Supabase PostgreSQL
-
-Frontend: React + Bootstrap
-
-Despliegue: Backend y frontend en Render
+Este es un proyecto fullstack completo que incluye autenticación, gestión de productos, carrito y pedidos.
+Cuenta con un panel administrativo avanzado, integración con Supabase y despliegue en Render.
 
 🚀 Características principales
 👤 Usuarios
@@ -19,19 +11,17 @@ Registro e inicio de sesión (JWT)
 
 Ver productos
 
-Agregar productos al carrito
+Agregar al carrito
 
 Realizar pedidos
 
-🔐 Administrador
+🔐 Administradores
 
-Panel con gestión de:
+Panel completo para gestión de:
 
-Productos (crear, actualizar, listar, eliminar)
+Productos (crear, editar, eliminar, subir imágenes)
 
-Órdenes (cambiar estado: pendiente, completado, cancelado)
-
-Subida de imágenes con multipart/form-data
+Órdenes (pendiente → completado → cancelado)
 
 Control total del inventario
 
@@ -45,7 +35,7 @@ Precio
 
 Stock
 
-Imagen (guardada en servidor)
+Imagen (almacenada en servidor)
 
 🧾 Órdenes
 
@@ -55,7 +45,7 @@ Total
 
 Estado
 
-Relación con usuario
+Relación con el usuario (OneToMany)
 
 📦 Tecnologías utilizadas
 Backend
@@ -72,7 +62,9 @@ Maven
 
 Frontend
 
-React + Vite (o CRA según tu repo)
+React
+
+Vite o CRA (según tu repo)
 
 Axios
 
@@ -80,12 +72,12 @@ React Bootstrap
 
 Infraestructura
 
-Render (Backend y Frontend)
+Render (backend + frontend)
 
-Supabase (Base de datos PostgreSQL)
+Supabase (PostgreSQL hosting)
 
 ⚙️ Configuración del Backend
-📁 Archivo application.properties
+📁 application.properties
 spring.application.name=Tienda
 
 # Base de datos Supabase
@@ -100,7 +92,7 @@ spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 
-# HikariCP (Recomendado para Supabase)
+# HikariCP recomendado
 spring.datasource.hikari.maximum-pool-size=5
 spring.datasource.hikari.minimum-idle=1
 
@@ -115,18 +107,19 @@ MAIL_FROM=no-reply@eventia.com
 app.frontend.url=${APP_FRONTEND_URL}
 app.backend.url=${APP_URL}
 
+# Imágenes
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 
-🗄️ Modelo de base de datos
+🗄️ Modelo de Base de Datos
 Producto
-id BIGSERIAL PRIMARY KEY
-nombre VARCHAR(100)
-descripcion TEXT
-precio NUMERIC(10,2)
-stock INT
-imagen_url TEXT
-
+Campo	Tipo
+id	BIGSERIAL
+nombre	VARCHAR(100)
+descripcion	TEXT
+precio	NUMERIC(10,2)
+stock	INT
+imagen_url	TEXT
 Usuario
 
 id
@@ -151,37 +144,35 @@ estado
 
 usuario_id
 
-▶️ Ejecutar Backend localmente
+▶️ Ejecutar Backend Localmente
 mvn clean package -DskipTests
 mvn spring-boot:run
 
 
-Asegúrate de tener:
+Requiere configurar las variables:
 
 DB_URL
+
 DB_USERNAME
+
 DB_PASSWORD
+
 JWT_SECRET
-
-
-Configurados en variables de entorno.
 
 💻 Configurar Frontend
 
-Crea un archivo .env:
+Crear archivo .env:
 
 REACT_APP_API_URL=http://localhost:8080
 
 
-Luego:
+Luego ejecutar:
 
 npm install
 npm start
 
 🌐 Despliegue en Render
 Backend
-
-Tipo: Web Service
 
 Build Command:
 
@@ -193,13 +184,10 @@ Start Command:
 java -jar target/tu-app.jar
 
 
-⚠️ Cuando cambies entidades o controladores, usa:
-
+⚠️ Cuando cambies entidades o controladores:
 👉 Clear build cache → Deploy
 
 Frontend
-
-Tipo: Static Site
 
 Build Command:
 
@@ -215,50 +203,47 @@ Variables:
 
 REACT_APP_API_URL=https://tu-backend.onrender.com
 
-🛠️ Admin Panel
+🛠️ Panel de Administración
 
-Incluye 3 cards:
+Incluye 3 módulos:
 
-1. Crear producto
+1️⃣ Crear producto
 
-Formulario para agregar nuevos productos con imagen.
+Formulario completo para nuevos productos + imagen.
 
-2. Listado de productos
+2️⃣ Listado de productos
 
-Tabla con botón para editar cada uno.
+Tabla con paginación
 
-3. Gestión de pedidos
+Botón de edición
 
-Tabla con:
+Modal para actualizar
 
-ID
+3️⃣ Gestión de pedidos
 
-Fecha
+Ver estado
 
-Estado
+Marcar entregado ✔️
 
-Total
+Cancelar ❌
 
-Botones: Marcar entregado / Cancelar
-
-Totalmente responsive y mejorado para móviles.
+Totalmente responsive
 
 👥 Roles
 Usuario
-Función	Disponible
+Acción	Estado
 Ver productos	✔️
 Crear pedidos	✔️
 Ver sus pedidos	✔️
 Admin
-Función	Disponible
+Acción	Estado
 CRUD productos	✔️
 Cambiar estado pedidos	✔️
-Ver todos los pedidos	✔️
-
+Ver todas las órdenes	✔️
 📜 Licencia
 
-Este proyecto es libre para uso académico y personal.
+Proyecto desarrollado para fines académicos y personales.
 
 🙌 Autor
 
-Proyecto desarrollado por estudiantes con asistencia técnica.
+Proyecto desarrollado por estudiantes de la UTP.
