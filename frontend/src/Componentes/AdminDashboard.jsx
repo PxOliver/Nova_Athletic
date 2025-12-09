@@ -18,7 +18,7 @@ import {
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 function AdminDashboard() {
-  // ---------- ESTADO PARA NUEVO PRODUCTO ----------
+  // ---------- ESTADO PARA NUEVO PRODUCTO ---------
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState("");
