@@ -34,36 +34,32 @@ public class SecurityFilterChainConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
 
-                    // ---------- PÚBLICO ----------
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/productos/**").permitAll()
-                    .requestMatchers("/api/uploads/**").permitAll()
+                        // PUBLICO
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/productos/**").permitAll()
+                        .requestMatchers("/api/uploads/**").permitAll()
 
-                    // Detalle de orden por id (página de agradecimiento /orden/:id)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes/**").permitAll()
+                        // USUARIO AUTENTICADO (deben ir ANTES)
+                        .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
 
-                    // ---------- USUARIO AUTENTICADO ----------
-                    // Órdenes del usuario logueado (/mis-ordenes)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
-                    // Crear orden (checkout)
-                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
+                        // ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
 
-                    // ---------- ADMIN ----------
-                    // Listado de todas las órdenes (AdminDashboard)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
-                    // Actualizar estado de orden (AdminDashboard)
-                    .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
+                        // **PÚBLICO SOLO PARA ORDEN POR ID**
+                        .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
 
-                    // ---------- CUALQUIER OTRO ENDPOINT ----------
-                    .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                        // CUALQUIER OTRA COSA
+                        .anyRequest().authenticated())
+
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -74,8 +70,7 @@ public class SecurityFilterChainConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                frontendUrl
-        ));
+                frontendUrl));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);
