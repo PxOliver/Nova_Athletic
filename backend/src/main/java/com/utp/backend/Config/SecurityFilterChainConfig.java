@@ -18,56 +18,60 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityFilterChainConfig {
 
-    private final AuthenticationEntryPoint authenticationEntryPoint;
-    private final JWTAuthenticationFilter jwtAuthenticationFilter;
+        private final AuthenticationEntryPoint authenticationEntryPoint;
+        private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    // URL del frontend (Render) con fallback a localhost
-    @Value("${FRONTEND_URL:http://localhost:3000}")
-    private String frontendUrl;
+        // URL del frontend (Render) con fallback a localhost
+        @Value("${FRONTEND_URL:http://localhost:3000}")
+        private String frontendUrl;
 
-    public SecurityFilterChainConfig(AuthenticationEntryPoint authenticationEntryPoint,
-            JWTAuthenticationFilter jwtAuthenticationFilter) {
-        this.authenticationEntryPoint = authenticationEntryPoint;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
+        public SecurityFilterChainConfig(AuthenticationEntryPoint authenticationEntryPoint,
+                        JWTAuthenticationFilter jwtAuthenticationFilter) {
+                this.authenticationEntryPoint = authenticationEntryPoint;
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable);
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+                httpSecurity
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .csrf(AbstractHttpConfigurer::disable);
 
-        httpSecurity.authorizeHttpRequests(
-                requestMatcher -> requestMatcher
-                        .requestMatchers("/api/auth/login/**").permitAll()
-                        .requestMatchers("/api/auth/registrar/**").permitAll()
-                        .requestMatchers("/api/auth/verifyEmail/**").permitAll()
-                        .requestMatchers("/api/productos/**").permitAll()
-                        .requestMatchers("/api/productos/crear/**").permitAll()
-                        .requestMatchers("/api/productos/actualizar/**").permitAll()
-                        .requestMatchers("/api/uploads/**").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(
-                        exceptionConfig -> exceptionConfig.authenticationEntryPoint(authenticationEntryPoint))
-                .sessionManagement(
-                        sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                httpSecurity.authorizeHttpRequests(
+                                requestMatcher -> requestMatcher
+                                                .requestMatchers("/api/auth/login/**").permitAll()
+                                                .requestMatchers("/api/auth/registrar/**").permitAll()
+                                                .requestMatchers("/api/auth/verifyEmail/**").permitAll()
+                                                .requestMatchers("/api/productos/**").permitAll()
+                                                .requestMatchers("/api/productos/crear/**").permitAll()
+                                                .requestMatchers("/api/productos/actualizar/**").permitAll()
+                                                .requestMatchers("/api/uploads/**").permitAll()
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(
+                                                exceptionConfig -> exceptionConfig
+                                                                .authenticationEntryPoint(authenticationEntryPoint))
+                                .sessionManagement(
+                                                sessionConfig -> sessionConfig
+                                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return httpSecurity.build();
-    }
+                return httpSecurity.build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
-        // Permitimos el front en Render y localhost para desarrollo
-        configuration.setAllowedOrigins(Arrays.asList(frontendUrl, "http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(Arrays.asList(
+                                "http://localhost:3000", // desarrollo
+                                "https://nova-athletic-1.onrender.com" // frontend en Render
+                ));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 }
