@@ -21,8 +21,7 @@ public class SecurityFilterChainConfig {
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    // Toma el valor de app.frontend.url de application.properties,
-    // que a su vez usa APP_FRONTEND_URL en Render.
+    // Usa la propiedad app.frontend.url de application.properties
     @Value("${app.frontend.url:https://nova-athletic-1.onrender.com}")
     private String frontendUrl;
 
@@ -41,15 +40,15 @@ public class SecurityFilterChainConfig {
 
         httpSecurity
                 .authorizeHttpRequests(requests -> requests
-                        // Endpoints públicos de autenticación
+                        // Auth público
                         .requestMatchers("/api/auth/login/**").permitAll()
                         .requestMatchers("/api/auth/registrar/**").permitAll()
                         .requestMatchers("/api/auth/verifyEmail/**").permitAll()
 
-                        // Endpoints públicos de productos (catálogo)
+                        // Catálogo de productos público
                         .requestMatchers("/api/productos/**").permitAll()
 
-                        // Archivos (imágenes, etc.)
+                        // Archivos públicos (imágenes)
                         .requestMatchers("/api/uploads/**").permitAll()
 
                         // Todo lo demás requiere autenticación
@@ -70,10 +69,9 @@ public class SecurityFilterChainConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes permitidos: local y el frontend en Render
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                frontendUrl  // https://nova-athletic-1.onrender.com en Render
+                frontendUrl  // en Render será https://nova-athletic-1.onrender.com
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
