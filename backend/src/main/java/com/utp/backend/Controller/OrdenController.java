@@ -4,9 +4,11 @@ import com.utp.backend.Model.Pedido;
 import com.utp.backend.Model.Detallepedido;
 import com.utp.backend.Model.Producto;
 import com.utp.backend.Model.Usuario;
+
 import com.utp.backend.Repository.PedidoRepository;
 import com.utp.backend.Repository.DetallePedidoRepository;
 import com.utp.backend.Repository.ProductoRepository;
+
 import com.utp.backend.Service.Auth.AuthService;
 import com.utp.backend.Util.JwtUtils;
 
@@ -36,27 +38,29 @@ public class OrdenController {
     @Autowired
     private AuthService authService;
 
-    // ========== CREAR ORDEN ==========
+    // ================== CREAR ORDEN ==================
     @PostMapping
     public ResponseEntity<?> crearOrden(
             @RequestBody CrearOrdenDto request,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         try {
+
             if (authorizationHeader == null || authorizationHeader.isBlank()) {
-                return ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body("Falta header Authorization");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Falta Authorization");
             }
 
+            // Obtener token sin "Bearer "
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
+            // → MÉTODO ESTÁTICO COMO EN TU JWTUTILS
             String username = JwtUtils.getUsernameFromToken(token)
                     .orElseThrow(() -> new RuntimeException("Token inválido"));
 
             Usuario usuario = authService.findByUsername(username);
 
-            // 2. Crear pedido
+            // Crear pedido
             Pedido pedido = new Pedido();
             pedido.setUsuario(usuario);
             pedido.setFecha(LocalDateTime.now());
@@ -72,12 +76,13 @@ public class OrdenController {
                 pedido.setCodigoPostal(request.direccionEnvio().codigoPostal());
             }
 
-            pedido = pedidoRepository.save(pedido);
+            pedidoRepository.save(pedido);
 
-            // 3. Crear detalles
+            // Procesar detalles
             List<Detallepedido> detalles = new ArrayList<>();
 
             for (OrdenItemDto item : request.items()) {
+
                 Producto producto = productoRepository.findById(item.productoId())
                         .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
@@ -86,131 +91,44 @@ public class OrdenController {
                 detalle.setProducto(producto);
                 detalle.setCantidad(item.cantidad());
 
-                BigDecimal subtotalItem =
-                        item.precioUnitario().multiply(BigDecimal.valueOf(item.cantidad()));
+                BigDecimal subtotalItem = item.precioUnitario()
+                        .multiply(BigDecimal.valueOf(item.cantidad()));
+
                 detalle.setSubtotal(subtotalItem);
 
                 detalles.add(detallePedidoRepository.save(detalle));
             }
 
-            OrdenResponseDto responseDto = mapearPedidoADto(pedido, detalles, request.metodoPago());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(mapearPedidoADto(pedido, detalles, request.metodoPago()));
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Error al crear la orden: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno al crear la orden");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: " + e.getMessage());
         }
     }
 
-    // ========== OBTENER ORDEN POR ID ==========
+    // ================== OBTENER ORDEN POR ID (PÚBLICO) ==================
     @GetMapping("/{id}")
-    public ResponseEntity<OrdenResponseDto> obtenerOrden(@PathVariable Long id) {
-        return pedidoRepository.findById(id)
-                .map(pedido -> {
-                    List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
-                    String metodoPago = "desconocido";
-                    OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, metodoPago);
-                    return ResponseEntity.ok(dto);
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    public ResponseEntity<?> obtenerOrden(@PathVariable Long id) {
 
-    // ========== OBTENER TODAS LAS ÓRDENES (ADMIN) ==========
-    @GetMapping
-    public ResponseEntity<List<OrdenResponseDto>> obtenerTodasLasOrdenes() {
+        var pedidoOptional = pedidoRepository.findById(id);
 
-        List<Pedido> pedidos = pedidoRepository.findAll();
-        List<OrdenResponseDto> respuesta = new ArrayList<>();
-
-        for (Pedido pedido : pedidos) {
-            List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
-            respuesta.add(mapearPedidoADto(pedido, detalles, "desconocido"));
+        if (!pedidoOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Orden no encontrada");
         }
 
-        return ResponseEntity.ok(respuesta);
+        Pedido pedido = pedidoOptional.get();
+        List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
+
+        OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
+
+        return ResponseEntity.ok(dto);
     }
 
-    // ========== OBTENER ÓRDENES DEL USUARIO LOGUEADO ==========
-    @GetMapping("/usuario")
-    public ResponseEntity<?> obtenerOrdenesUsuario(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        try {
-            if (authHeader == null || authHeader.isBlank()) {
-                return ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body("Falta header Authorization");
-            }
-
-            String token = authHeader.replace("Bearer ", "").trim();
-
-            String username = JwtUtils.getUsernameFromToken(token)
-                    .orElseThrow(() -> new RuntimeException("Token inválido"));
-
-            Usuario usuario = authService.findByUsername(username);
-
-            List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuario.getId());
-            List<OrdenResponseDto> respuesta = new ArrayList<>();
-
-            for (Pedido pedido : pedidos) {
-                List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
-                respuesta.add(mapearPedidoADto(pedido, detalles, "desconocido"));
-            }
-
-            return ResponseEntity.ok(respuesta);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body("No autorizado: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al obtener las órdenes del usuario");
-        }
-    }
-
-    // ========== ACTUALIZAR ESTADO DE ORDEN (ADMIN) ==========
-    @PutMapping("/{id}/estado")
-    public ResponseEntity<?> actualizarEstadoOrden(
-            @PathVariable Long id,
-            @RequestBody ActualizarEstadoOrdenDto request) {
-
-        try {
-            Pedido pedido = pedidoRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
-
-            pedido.setEstado(request.estado());
-            pedido = pedidoRepository.save(pedido);
-
-            List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
-
-            OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
-            return ResponseEntity.ok(dto);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body("Error al actualizar estado: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno al actualizar estado de la orden");
-        }
-    }
-
-    // ========== MAPEOS AUXILIARES ==========
-    private OrdenResponseDto mapearPedidoADto(Pedido pedido,
-                                              List<Detallepedido> detalles,
-                                              String metodoPago) {
+    // ================== MAPPER ==================
+    private OrdenResponseDto mapearPedidoADto(Pedido pedido, List<Detallepedido> detalles, String metodoPago) {
 
         List<OrdenItemDetalleDto> itemsDto = detalles.stream()
                 .map(det -> new OrdenItemDetalleDto(

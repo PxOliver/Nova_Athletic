@@ -6,9 +6,11 @@ import com.utp.backend.Util.JwtUtils;
 import com.utp.backend.listener.RegistrationCompleteEvent;
 import com.utp.backend.token.VerificationToken;
 import com.utp.backend.token.VerificationTokenRepository;
+
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,58 +24,41 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserRepo userRepo;
-
-    @Autowired
-    private VerificationTokenRepository tokenRepository;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private UserRepo userRepo;
+    @Autowired private VerificationTokenRepository tokenRepository;
+    @Autowired private ApplicationEventPublisher eventPublisher;
+    @Autowired private JwtUtils jwtUtils;
 
     @Override
     public String login(String username, String password) {
-        Optional<Usuario> optionalUser = userRepo.findByUsername(username);
 
-        if (optionalUser.isEmpty()) {
-            throw new RuntimeException("Usuario no encontrado");
-        }
-
-        Usuario user = optionalUser.get();
+        Usuario user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         if (!user.isEnabled()) {
             throw new RuntimeException("La cuenta no ha sido verificada");
         }
 
         var authToken = new UsernamePasswordAuthenticationToken(username, password);
-        var authenticate = authenticationManager.authenticate(authToken);
+        var authentication = authenticationManager.authenticate(authToken);
 
-        return JwtUtils.generateToken(((UserDetails) (authenticate.getPrincipal())).getUsername());
+        return jwtUtils.generateToken(((UserDetails) authentication.getPrincipal()).getUsername());
     }
 
     @Override
     public String verifyToken(String token) {
-        var usernameOptional = JwtUtils.getUsernameFromToken(token);
-        if (usernameOptional.isPresent()) {
-            return usernameOptional.get();
-        }
-        throw new RuntimeException("Token invalid");
+        return jwtUtils.getUsernameFromToken(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
     }
 
     @Override
     public String signUp(String nombre, String username, String password, String email) {
 
-        // 👇 IMPORTANTE: estos textos deben coincidir con lo que revisa AuthController
         if (userRepo.existsByUsername(username)) {
             throw new RuntimeException("Username already exists");
         }
-
         if (userRepo.existsByEmail(email)) {
             throw new RuntimeException("Email already exists");
         }
@@ -86,10 +71,8 @@ public class AuthServiceImpl implements AuthService {
         user.setFechaRegistro(LocalDateTime.now());
         user.setEnabled(false);
 
-        user = userRepo.save(user);
+        userRepo.save(user);
 
-        // La URL real se resuelve en RegistrationCompleteEventListener con APP_URL,
-        // así que aquí no importa el segundo parámetro.
         eventPublisher.publishEvent(new RegistrationCompleteEvent(user, "..."));
 
         return "Verification email sent";
@@ -101,48 +84,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void saveUserVerificationToken(Usuario theUser, String token) {
-        var verificationToken = new VerificationToken(token, theUser);
-        tokenRepository.save(verificationToken);
+    public void saveUserVerificationToken(Usuario user, String token) {
+        tokenRepository.save(new VerificationToken(token, user));
     }
 
     @Override
-    public String validateToken(String theToken) {
+    public String validateToken(String tokenString) {
 
-        VerificationToken token = tokenRepository.findByToken(theToken);
-        if (token == null) {
-            System.out.println("Token no encontrado en la base de datos.");
-            return "Token de verificación no válido";
-        }
+        VerificationToken token = tokenRepository.findByToken(tokenString);
+        if (token == null) return "Token de verificación no válido";
 
         Usuario user = token.getUser();
-        System.out.println("Estado actual del usuario: " + user.isEnabled());
 
-        Calendar calendar = Calendar.getInstance();
-        if ((token.getExpirationTime().getTime() - calendar.getTime().getTime()) <= 0) {
-
+        Calendar now = Calendar.getInstance();
+        if (token.getExpirationTime().getTime() - now.getTimeInMillis() <= 0) {
             tokenRepository.delete(token);
-            System.out.println("Token expirado y eliminado.");
             return "expired";
         }
 
         user.setEnabled(true);
-        try {
-            userRepo.save(user);
-            System.out.println("Usuario actualizado. Nuevo estado: " + user.isEnabled());
+        userRepo.save(user);
+        tokenRepository.delete(token);
 
-            tokenRepository.delete(token);
-            return "valido";
-        } catch (Exception e) {
-            System.out.println("Error al guardar usuario: " + e.getMessage());
-            e.printStackTrace();
-            return "Error al actualizar usuario";
-        }
+        return "valido";
     }
 
     @Override
     public Usuario findByUsername(String username) {
         return userRepo.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 }

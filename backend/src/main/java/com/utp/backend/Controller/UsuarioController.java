@@ -4,23 +4,15 @@ import com.utp.backend.Model.Usuario;
 import com.utp.backend.Service.Auth.UsuarioService;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -32,137 +24,62 @@ public class UsuarioController {
 
     @GetMapping("/perfil")
     public ResponseEntity<?> getPerfilUsuario(@AuthenticationPrincipal UserDetails userDetails) {
-        try {
-            if (userDetails == null) {
-                return ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body("Usuario no autenticado");
-            }
 
-            String username = userDetails.getUsername();
-            Usuario usuario = usuarioService.obtenerUsuarioPorUsername(username);
+        if (userDetails == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
 
-            if (usuario == null) {
-                return ResponseEntity
-                        .status(HttpStatus.NOT_FOUND)
-                        .body("Usuario no encontrado");
-            }
+        Usuario usuario = usuarioService.obtenerUsuarioPorUsername(userDetails.getUsername());
 
-            return ResponseEntity.ok(usuario);
-
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al obtener el perfil: " + e.getMessage());
-        }
+        return ResponseEntity.ok(usuario);
     }
 
     @PutMapping("/perfil/actualizar")
-    public ResponseEntity<?> actualizarPerfilUsuario(
+    public ResponseEntity<?> actualizar(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody Usuario usuarioActualizado) {
+            @RequestBody Usuario data) {
 
-        try {
-            if (userDetails == null) {
-                return ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body("Usuario no autenticado");
-            }
+        if (userDetails == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
 
-            String username = userDetails.getUsername();
-            Usuario usuario = usuarioService.obtenerUsuarioPorUsername(username);
+        Usuario usuario = usuarioService.obtenerUsuarioPorUsername(userDetails.getUsername());
 
-            if (usuario == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Usuario no encontrado");
-            }
+        usuario.setNombre(data.getNombre());
+        usuario.setEmail(data.getEmail());
+        usuario.setTelefono(data.getTelefono());
+        usuario.setPais(data.getPais());
 
-            if (usuarioActualizado.getNombre() == null || usuarioActualizado.getNombre().isEmpty()) {
-                return ResponseEntity.badRequest().body("El nombre es obligatorio");
-            }
-
-            if (usuarioActualizado.getEmail() == null || usuarioActualizado.getEmail().isEmpty()) {
-                return ResponseEntity.badRequest().body("El email es obligatorio");
-            }
-
-            usuario.setNombre(usuarioActualizado.getNombre());
-            usuario.setEmail(usuarioActualizado.getEmail());
-            usuario.setTelefono(usuarioActualizado.getTelefono());
-            usuario.setPais(usuarioActualizado.getPais());
-
-            Usuario usuarioActualizadoDB = usuarioService.actualizarUsuario(usuario);
-
-            return ResponseEntity.ok(usuarioActualizadoDB);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al actualizar el perfil: " + e.getMessage());
-        }
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(usuario));
     }
 
     @PutMapping("/perfil/actualizar/imagen")
-    public ResponseEntity<?> actualizarImagenPerfil(
+    public ResponseEntity<?> actualizarImagen(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam("imagen") MultipartFile imagen) {
+            @RequestParam("imagen") MultipartFile imagen) throws IOException {
 
-        try {
-            if (userDetails == null) {
-                return ResponseEntity
-                        .status(HttpStatus.UNAUTHORIZED)
-                        .body("Usuario no autenticado");
-            }
+        if (userDetails == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
 
-            String username = userDetails.getUsername();
-            Usuario usuario = usuarioService.obtenerUsuarioPorUsername(username);
+        Usuario usuario = usuarioService.obtenerUsuarioPorUsername(userDetails.getUsername());
 
-            if (usuario == null) {
-                return ResponseEntity
-                        .status(HttpStatus.NOT_FOUND)
-                        .body("Usuario no encontrado");
-            }
+        String url = saveImage(imagen);
+        usuario.setImagenUrl(url);
 
-            String imageUrl = uploadImage(imagen);
-            usuario.setImagenUrl(imageUrl);
-            Usuario usuarioActualizadoDB = usuarioService.actualizarUsuario(usuario);
-
-            return ResponseEntity.ok(usuarioActualizadoDB);
-
-        } catch (IOException e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al subir la imagen: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al actualizar la imagen de perfil: " + e.getMessage());
-        }
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(usuario));
     }
 
-    private String uploadImage(MultipartFile file) throws IOException {
-        Path uploadPath = Paths.get("uploads/");
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
+    private String saveImage(MultipartFile file) throws IOException {
 
-        String originalFilename = file.getOriginalFilename();
-        String fileName = UUID.randomUUID().toString();
+        Path uploadPath = Paths.get("uploads");
+        if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
-        String extension = "";
-        if (originalFilename != null) {
-            int dotIndex = originalFilename.lastIndexOf('.');
-            if (dotIndex > 0) {
-                extension = originalFilename.substring(dotIndex);
-            }
-        }
-        if (extension.isEmpty()) {
-            extension = ".jpg";
-        }
+        String extension = file.getOriginalFilename().substring(
+                file.getOriginalFilename().lastIndexOf("."));
 
-        fileName += extension;
-        Path filePath = uploadPath.resolve(fileName);
+        String filename = UUID.randomUUID() + extension;
+
+        Path filePath = uploadPath.resolve(filename);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Ruta pública que servirás desde tu controlador de uploads
-        return "/api/uploads/" + fileName;
+        return "/api/uploads/" + filename;
     }
 }

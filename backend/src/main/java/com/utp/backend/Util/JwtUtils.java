@@ -3,61 +3,65 @@ package com.utp.backend.Util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
-import javax.crypto.SecretKey;
-import org.apache.commons.lang3.time.DateUtils;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class JwtUtils {
 
-  private static final SecretKey secretKey = Jwts.SIG.HS256.key().build();
+    // Clave segura generada por JJWT (HS256)
+    private static final SecretKey SECRET_KEY = Jwts.SIG.HS256.key().build();
 
-  private static final String ISSUER = "server";
+    private static final String ISSUER = "server";
 
-  private JwtUtils() {
-  }
+    private JwtUtils() {}
 
-  public static boolean validateToken(String jwtToken) {
-    return parseToken(jwtToken).isPresent();
-  }
+    // ================= VALIDAR TOKEN ====================
+    public static boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(SECRET_KEY)
+                    .build()
+                    .parseSignedClaims(token);
 
-  private static Optional<Claims> parseToken(String jwtToken) {
-    var jwtParser = Jwts.parser()
-        .verifyWith(secretKey)
-        .build();
-
-    try {
-      return Optional.of(jwtParser.parseSignedClaims(jwtToken).getPayload());
-    } catch (JwtException | IllegalArgumentException e) {
-      System.err.println("JWT Exception occurred: " + e.getMessage());
+            return true;
+        } catch (JwtException e) {
+            System.out.println("Token inválido: " + e.getMessage());
+            return false;
+        }
     }
 
-    return Optional.empty();
-  }
+    // ================= OBTENER USERNAME ====================
+    public static Optional<String> getUsernameFromToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(SECRET_KEY)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
-  public static Optional<String> getUsernameFromToken(String jwtToken) {
-    var claimsOptional = parseToken(jwtToken); 
-    return claimsOptional.map(Claims::getSubject);                                                  
-  }
+            return Optional.ofNullable(claims.getSubject());
 
-  public static String generateToken(String username) {
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
 
-    var currentDate = new Date();
+    // ================= GENERAR TOKEN ====================
+    public static String generateToken(String username) {
 
-    var jwtExpirationInMinutes = 10;
+        Date ahora = new Date();
+        Date expiracion = new Date(ahora.getTime() + (60 * 60 * 1000)); // 1 hora
 
-    var expiration = DateUtils.addMinutes(currentDate, jwtExpirationInMinutes);
-
-    return Jwts.builder()
-        .id(UUID.randomUUID().toString()) 
-        .issuer(ISSUER) 
-        .subject(username) 
-        .signWith(secretKey) 
-        .issuedAt(currentDate) 
-        .expiration(expiration)
-        .compact();
-  }
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .issuer(ISSUER)
+                .subject(username)
+                .issuedAt(ahora)
+                .expiration(expiracion)
+                .signWith(SECRET_KEY)
+                .compact();
+    }
 }

@@ -6,7 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,50 +18,53 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Autowired
     private UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
-        var jwtTokenOptional = getTokenFromRequest(request);
+        String token = getTokenFromRequest(request);
 
-        jwtTokenOptional.ifPresent(jwtToken -> {
-            if (JwtUtils.validateToken(jwtToken)) {
+        if (token != null && jwtUtils.validateToken(token)) {
 
-                var usernameOptional = JwtUtils.getUsernameFromToken(jwtToken);
+            String username = jwtUtils.getUsernameFromToken(token).orElse(null);
 
-                usernameOptional.ifPresent(username -> {
+            if (username != null) {
+                var userDetails = userDetailsService.loadUserByUsername(username);
 
-                    var userDetails = userDetailsService.loadUserByUsername(username);
+                var authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
 
-                    var authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    authenticationToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                });
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        });
+        }
 
         filterChain.doFilter(request, response);
     }
 
-    private Optional<String> getTokenFromRequest(HttpServletRequest request) {
-        var authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+    private String getTokenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
-            return Optional.of(authHeader.substring(7));
+            return authHeader.substring(7);
         }
-        
-        return Optional.empty();
+
+        return null;
     }
 }
