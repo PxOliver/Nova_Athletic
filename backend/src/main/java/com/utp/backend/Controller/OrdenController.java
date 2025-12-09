@@ -10,6 +10,7 @@ import com.utp.backend.Repository.DetallePedidoRepository;
 import com.utp.backend.Repository.ProductoRepository;
 
 import com.utp.backend.Service.Auth.AuthService;
+import com.utp.backend.Service.Auth.UsuarioService;
 import com.utp.backend.Util.JwtUtils;
 
 import java.math.BigDecimal;
@@ -20,6 +21,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -38,19 +41,22 @@ public class OrdenController {
     @Autowired
     private AuthService authService;
 
-    // ================== CREAR ORDEN (checkout) ==================
+    @Autowired
+    private UsuarioService usuarioService;
+
+    // ================== CREAR ORDEN ==================
     @PostMapping
     public ResponseEntity<?> crearOrden(
             @RequestBody CrearOrdenDto request,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         try {
+
             if (authorizationHeader == null || authorizationHeader.isBlank()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Falta Authorization");
             }
 
-            // Token sin "Bearer "
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
             String username = JwtUtils.getUsernameFromToken(token)
@@ -58,7 +64,6 @@ public class OrdenController {
 
             Usuario usuario = authService.findByUsername(username);
 
-            // Crear pedido
             Pedido pedido = new Pedido();
             pedido.setUsuario(usuario);
             pedido.setFecha(LocalDateTime.now());
@@ -74,9 +79,8 @@ public class OrdenController {
                 pedido.setCodigoPostal(request.direccionEnvio().codigoPostal());
             }
 
-            pedido = pedidoRepository.save(pedido);
+            pedidoRepository.save(pedido);
 
-            // Procesar detalles
             List<Detallepedido> detalles = new ArrayList<>();
 
             for (OrdenItemDto item : request.items()) {
@@ -97,26 +101,22 @@ public class OrdenController {
                 detalles.add(detallePedidoRepository.save(detalle));
             }
 
-            OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, request.metodoPago());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(mapearPedidoADto(pedido, detalles, request.metodoPago()));
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
-
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error interno al crear la orden");
         }
     }
 
-    // ================== OBTENER ORDEN POR ID (OrderDetails) ==================
+    // ================== OBTENER ORDEN POR ID (PÚBLICO) ==================
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerOrden(@PathVariable Long id) {
 
         var pedidoOptional = pedidoRepository.findById(id);
 
-        if (!pedidoOptional.isPresent()) {
+        if (pedidoOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Orden no encontrada");
         }
@@ -129,64 +129,32 @@ public class OrdenController {
         return ResponseEntity.ok(dto);
     }
 
-    // ================== TODAS LAS ÓRDENES (AdminDashboard) ==================
-    @GetMapping
-    public ResponseEntity<List<OrdenResponseDto>> obtenerTodas() {
-
-        List<Pedido> pedidos = pedidoRepository.findAll();
-        List<OrdenResponseDto> respuesta = new ArrayList<>();
-
-        for (Pedido pedido : pedidos) {
-            List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
-            respuesta.add(
-                    mapearPedidoADto(pedido, detalles, "desconocido")
-            );
-        }
-
-        return ResponseEntity.ok(respuesta);
-    }
-
-    // ================== ÓRDENES DEL USUARIO LOGUEADO (MisOrdenes) ==================
+    // ================== OBTENER ÓRDENES DEL USUARIO LOGUEADO ==================
     @GetMapping("/usuario")
     public ResponseEntity<?> obtenerOrdenesUsuario(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        try {
-            if (authHeader == null || authHeader.isBlank()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Falta Authorization");
-            }
-
-            String token = authHeader.replace("Bearer ", "").trim();
-
-            String username = JwtUtils.getUsernameFromToken(token)
-                    .orElseThrow(() -> new RuntimeException("Token inválido"));
-
-            Usuario usuario = authService.findByUsername(username);
-
-            List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuario.getId());
-            List<OrdenResponseDto> respuesta = new ArrayList<>();
-
-            for (Pedido pedido : pedidos) {
-                List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
-                respuesta.add(mapearPedidoADto(pedido, detalles, "desconocido"));
-            }
-
-            return ResponseEntity.ok(respuesta);
-
-        } catch (RuntimeException e) {
+        if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("No autorizado: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al obtener las órdenes del usuario");
+                    .body("Usuario no autenticado");
         }
+
+        Usuario usuario = usuarioService.obtenerUsuarioPorUsername(userDetails.getUsername());
+
+        List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuario.getId());
+
+        List<OrdenResponseDto> dtos = pedidos.stream()
+                .map(p -> {
+                    List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(p.getId());
+                    return mapearPedidoADto(p, detalles, "desconocido");
+                })
+                .toList();
+
+        return ResponseEntity.ok(dtos);
     }
 
     // ================== MAPPER ==================
-    private OrdenResponseDto mapearPedidoADto(Pedido pedido,
-                                              List<Detallepedido> detalles,
-                                              String metodoPago) {
+    private OrdenResponseDto mapearPedidoADto(Pedido pedido, List<Detallepedido> detalles, String metodoPago) {
 
         List<OrdenItemDetalleDto> itemsDto = detalles.stream()
                 .map(det -> new OrdenItemDetalleDto(

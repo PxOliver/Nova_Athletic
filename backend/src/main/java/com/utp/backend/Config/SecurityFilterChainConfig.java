@@ -44,18 +44,19 @@ public class SecurityFilterChainConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/productos/**").permitAll()
                     .requestMatchers("/api/uploads/**").permitAll()
+
                     // Detalle de orden por id (página de agradecimiento /orden/:id)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes/**").permitAll()
 
                     // ---------- USUARIO AUTENTICADO ----------
-                    // Crear orden (checkout)
-                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
                     // Órdenes del usuario logueado (/mis-ordenes)
                     .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
+                    // Crear orden (checkout)
+                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
 
                     // ---------- ADMIN ----------
                     // Listado de todas las órdenes (AdminDashboard)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
                     // Actualizar estado de orden (AdminDashboard)
                     .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
 
