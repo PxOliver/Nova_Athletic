@@ -40,38 +40,28 @@ public class SecurityFilterChainConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ========================
                         // PÚBLICO
-                        // ========================
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
 
-                        // ========================
                         // USUARIO AUTENTICADO
-                        // ========================
                         .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
 
-                        // ========================
-                        // ADMIN
-                        // ========================
-                        // listado de TODAS las órdenes
+                        // ==== ADMIN PRODUCTOS ====
+                        .requestMatchers(HttpMethod.POST, "/api/productos/crear").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/productos/actualizar/**").hasRole("ADMIN")
+
+                        // ==== ADMIN ÓRDENES ====
                         .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
-                        // endpoint de gestión (cambiar estado)
                         .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
-                        // si algún día usas /api/ordenes/admin
                         .requestMatchers(HttpMethod.GET, "/api/ordenes/admin").hasRole("ADMIN")
 
-                        // ========================
-                        // ORDEN POR ID
-                        // ========================
-                        // ejemplo: GET /api/ordenes/1
+                        // ORDEN POR ID (público)
                         .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
 
-                        // ========================
-                        // RESTO DE RUTAS
-                        // ========================
+                        // RESTO
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
