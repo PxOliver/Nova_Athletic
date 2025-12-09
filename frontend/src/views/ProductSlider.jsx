@@ -5,13 +5,15 @@ import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import "../stylesheets/ProductSlider.css"; 
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 const ProductSlider = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/productos")
+      .get(`${API_BASE}/api/productos`)
       .then((response) => {
         setProducts(response.data);
       })
@@ -32,32 +34,30 @@ const ProductSlider = () => {
 
   return (
     <div className="product-slider-container">
-      {/* Botón de navegación izquierda */}
       <MdChevronLeft
         size={40}
         className="slider-icon left"
         onClick={slideLeft}
       />
 
-      {/* Contenedor del slider */}
       <div id="product-slider" className="product-slider">
-        {/* Muestra un mensaje de carga si no hay productos */}
         {products.length === 0 ? (
           <p>Cargando productos...</p>
         ) : (
-          // Mapea los productos y crea una tarjeta para cada uno
           products.map((product) => (
             <div className="product-card" key={product.id}>
               <Card style={{ width: "18rem" }}>
-                {/* Imagen del producto, asegurando la ruta correcta */}
                 <Card.Img
                   variant="top"
-                  src={product.imagenUrl.startsWith("http") ? product.imagenUrl : `http://localhost:8080${product.imagenUrl}`}
+                  src={
+                    product.imagenUrl.startsWith("http")
+                      ? product.imagenUrl
+                      : `${API_BASE}${product.imagenUrl}`
+                  }
                 />
 
                 <Card.Body>
-                  <Card.Title>{product.nombre}</Card.Title>{" "}
-                  {/* Nombre del producto */}
+                  <Card.Title>{product.nombre}</Card.Title>
                   <Card.Text>
                     <strong>Precio:</strong>{" "}
                     {new Intl.NumberFormat("es-PE", {
@@ -66,10 +66,12 @@ const ProductSlider = () => {
                       minimumFractionDigits: 2,
                     }).format(product.precio)}
                   </Card.Text>
-                  {/* Precio del producto */}
-                  {/*  Redirige al detalle del producto */}
-                  <Button variant="primary" onClick={() => navigate(`/producto/${product.id}`)}>Ver Producto</Button>{" "}
-                  {/* Botón para ver más detalles */}
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate(`/producto/${product.id}`)}
+                  >
+                    Ver Producto
+                  </Button>
                 </Card.Body>
               </Card>
             </div>
@@ -77,7 +79,6 @@ const ProductSlider = () => {
         )}
       </div>
 
-      {/* Botón de navegación derecha */}
       <MdChevronRight
         size={40}
         className="slider-icon right"

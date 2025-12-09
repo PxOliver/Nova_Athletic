@@ -12,6 +12,8 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 function MisOrdenes() {
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ function MisOrdenes() {
         if (!token) throw new Error("Debes iniciar sesión.");
 
         const response = await axios.get(
-          "http://localhost:8080/api/ordenes/usuario",
+          `${API_BASE}/api/ordenes/usuario`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -68,7 +70,7 @@ function MisOrdenes() {
       className="my-5"
       style={{
         maxWidth: "1100px",
-        paddingTop: "80px", // ✔ SEPARAR DEL NAVBAR
+        paddingTop: "80px",
       }}
     >
       <h2

@@ -16,6 +16,8 @@ import { useCart } from "../Componentes/CartContext";
 import { useNavigate } from "react-router-dom";
 import "../stylesheets/MyNavbar.css";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 function MyNavbar() {
   const {
     cart,
@@ -39,7 +41,7 @@ function MyNavbar() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/productos")
+      .get(`${API_BASE}/api/productos`)
       .then((response) => setProducts(response.data))
       .catch((error) => console.error("Error al obtener productos:", error));
   }, []);
@@ -124,7 +126,7 @@ function MyNavbar() {
             className="imagen_logo me-2"
             style={{ height: "40px" }}
           />
-          Tienda Deportiva Nova Atletic
+          Tienda Deportiva Nova Athletic
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -161,7 +163,7 @@ function MyNavbar() {
                           src={
                             product.imagenUrl.startsWith("http")
                               ? product.imagenUrl
-                              : `http://localhost:8080${product.imagenUrl}`
+                              : `${API_BASE}${product.imagenUrl}`
                           }
                           alt={product.nombre}
                           className="suggestion-image"
@@ -276,7 +278,7 @@ function MyNavbar() {
                     src={
                       product.imagenUrl.startsWith("http")
                         ? product.imagenUrl
-                        : `http://localhost:8080${product.imagenUrl}`
+                        : `${API_BASE}${product.imagenUrl}`
                     }
                     alt={product.nombre}
                     className="cart-item-img"

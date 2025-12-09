@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../Componentes/AuthContext";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,7 @@ function Login() {
     setSuccessMessage("");
 
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
+      const response = await axios.post(`${API_BASE}/api/auth/login`, {
         username,
         password,
       });
@@ -40,7 +42,10 @@ function Login() {
       }
     } catch (err) {
       setSuccessMessage("");
-      setError(err.response?.data?.message || "Error al iniciar sesión. Por favor, intente más tarde.");
+      setError(
+        err.response?.data?.message ||
+          "Error al iniciar sesión. Por favor, intente más tarde."
+      );
       console.error("Error detallado:", err);
     }
   }
@@ -64,7 +69,6 @@ function Login() {
           )}
 
           <div className="mb-3">
-
             <input
               type="text"
               className="form-control"

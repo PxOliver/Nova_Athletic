@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import axios from "axios";
 import "../stylesheets/Registro.css";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 function Registro() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ function Registro() {
     }
 
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/registrar", {
+      const response = await axios.post(`${API_BASE}/api/auth/registrar`, {
         username,
         email,
         password,
@@ -53,7 +55,6 @@ function Registro() {
       <div className='card registro-card'>
         <form onSubmit={save}>
           <h2 className='form-title'>Crea una cuenta</h2>
-
 
           {error && (
             <div className="alert alert-danger text-center" role="alert">

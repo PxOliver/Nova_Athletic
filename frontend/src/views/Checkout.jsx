@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../Componentes/CartContext";
 import { useAuth } from "../Componentes/AuthContext";
@@ -14,6 +14,8 @@ import {
   Alert,
   Badge,
 } from "react-bootstrap";
+
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 function Checkout() {
   const { cart, clearCart } = useCart();
@@ -92,7 +94,7 @@ function Checkout() {
       };
 
       const response = await axios.post(
-        "http://localhost:8080/api/ordenes",
+        `${API_BASE}/api/ordenes`,
         orderData,
         {
           headers: {

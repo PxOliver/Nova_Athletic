@@ -15,6 +15,8 @@ import {
   Modal,
 } from "react-bootstrap";
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 function AdminDashboard() {
   // ---------- ESTADO PARA NUEVO PRODUCTO ----------
   const [nombre, setNombre] = useState("");
@@ -62,7 +64,7 @@ function AdminDashboard() {
           throw new Error("No se encontró token. Inicia sesión como admin.");
         }
 
-        const response = await axios.get("http://localhost:8080/api/ordenes", {
+        const response = await axios.get(`${API_BASE}/api/ordenes`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -87,7 +89,7 @@ function AdminDashboard() {
   const fetchProductos = async () => {
     try {
       setCargandoProductos(true);
-      const response = await axios.get("http://localhost:8080/api/productos");
+      const response = await axios.get(`${API_BASE}/api/productos`);
       setProductos(response.data);
       setCargandoProductos(false);
     } catch (err) {
@@ -122,7 +124,7 @@ function AdminDashboard() {
     formData.append("imagen", imagen);
 
     try {
-      await axios.post("http://localhost:8080/api/productos/crear", formData, {
+      await axios.post(`${API_BASE}/api/productos/crear`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -154,7 +156,7 @@ function AdminDashboard() {
       }
 
       const response = await axios.put(
-        `http://localhost:8080/api/ordenes/${idOrden}/estado`,
+        `${API_BASE}/api/ordenes/${idOrden}/estado`,
         { estado: nuevoEstado },
         {
           headers: {
@@ -200,7 +202,6 @@ function AdminDashboard() {
       const token = localStorage.getItem("token");
       console.log("TOKEN QUE SE ENVÍA EN EDIT:", token);
 
-      // FormData porque el backend recibe @RequestParam + MultipartFile
       const formData = new FormData();
       formData.append("nombre", productoEdit.nombre);
       formData.append("descripcion", productoEdit.descripcion || "");
@@ -212,7 +213,7 @@ function AdminDashboard() {
       }
 
       const response = await axios.put(
-        `http://localhost:8080/api/productos/actualizar/${productoEdit.id}`,
+        `${API_BASE}/api/productos/actualizar/${productoEdit.id}`,
         formData,
         {
           headers: {
@@ -250,13 +251,14 @@ function AdminDashboard() {
               🛠 Panel de Administración
             </h2>
 
-            {/* UNA SOLA FILA, 3 COLUMNAS CENTRADAS */}
             <Row className="g-4 justify-content-center">
               {/* ------------ CARD 1: AGREGAR PRODUCTO ------------ */}
               <Col lg={4} md={6}>
                 <Card className="shadow-sm border-0 h-100">
                   <Card.Body>
-                    <h4 className="mb-3 text-center">🛒 Agregar Nuevo Producto</h4>
+                    <h4 className="mb-3 text-center">
+                      🛒 Agregar Nuevo Producto
+                    </h4>
 
                     {mensaje && <Alert variant="success">{mensaje}</Alert>}
                     {error && <Alert variant="danger">{error}</Alert>}
@@ -391,7 +393,7 @@ function AdminDashboard() {
                 </Card>
               </Col>
 
-              {/* ------------ CARD 3: GESTIÓN DE ÓRDENES ------------ */}
+              {/* ------------ CARD 3: GESTIÓN DE PEDIDOS ------------ */}
               <Col lg={4} md={8}>
                 <Card className="shadow-sm border-0 h-100">
                   <Card.Body>

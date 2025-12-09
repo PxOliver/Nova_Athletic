@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Card,
@@ -13,6 +13,8 @@ import "../stylesheets/Perfil.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 const Perfil = () => {
   const [perfilData, setPerfilData] = useState(null);
@@ -160,7 +162,7 @@ const Perfil = () => {
               <Image
                 src={
                   perfilData?.imagenUrl
-                    ? `http://localhost:8080${perfilData.imagenUrl}`
+                    ? `${API_BASE}${perfilData.imagenUrl}`
                     : "https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava3.webp"
                 }
                 roundedCircle
@@ -187,7 +189,7 @@ const Perfil = () => {
             <p className="text-muted mb-0">Usuario</p>
           </div>
 
-          {/* DATOS DEL PERFIL – TODOS CENTRADOS IGUAL */}
+          {/* DATOS DEL PERFIL */}
           <div className="mb-3 text-center">
             <p className="mb-1 fw-semibold">Nombre</p>
             <p className="text-muted border rounded px-3 py-2 m-0">

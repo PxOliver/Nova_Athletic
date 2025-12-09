@@ -5,6 +5,8 @@ import { Card, Button, Spinner, Row, Col, Container } from "react-bootstrap";
 import { useCart } from "../Componentes/CartContext"; 
 import "../stylesheets/ProductDetails.css"; 
 
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
 const ProductDetail = () => {
   const { id } = useParams(); 
   const [product, setProduct] = useState(null); 
@@ -17,7 +19,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/api/productos/${id}`
+          `${API_BASE}/api/productos/${id}`
         );
         setProduct(response.data);
       } catch (err) {
@@ -30,31 +32,26 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
-  // Si el producto está cargando, muestra un spinner de carga
   if (loading) {
     return <Spinner animation="border" />;
   }
 
-  // Si hubo un error en la carga, muestra un mensaje de error
   if (error) {
     return <p className="text-danger">{error}</p>;
   }
 
-  // Función para aumentar la cantidad del producto (sin exceder el stock disponible)
   const increaseQuantity = () => {
     if (quantity < product.stock) {
       setQuantity(quantity + 1);
     }
   };
 
-  // Función para disminuir la cantidad del producto (mínimo 1 unidad)
   const decreaseQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1);
     }
   };
 
-  // Calcula el precio total basado en la cantidad seleccionada
   const totalPrice = product.precio * quantity;
 
   return (
@@ -65,7 +62,11 @@ const ProductDetail = () => {
           <Col md={6}>
             <Card.Img
               variant="top"
-              src={product.imagenUrl.startsWith("http") ? product.imagenUrl : `http://localhost:8080${product.imagenUrl}`}
+              src={
+                product.imagenUrl.startsWith("http")
+                  ? product.imagenUrl
+                  : `${API_BASE}${product.imagenUrl}`
+              }
               className="product-detail-img"
             />
           </Col>
@@ -110,14 +111,12 @@ const ProductDetail = () => {
                 }).format(totalPrice)}
               </Card.Text>
 
-              {/* Mensaje de error si hay algún problema con la adición al carrito */}
               {errorMessage && (
                 <div className="alert alert-danger" role="alert">
                   {errorMessage}
                 </div>
               )}
 
-              {/* Botón para agregar al carrito */}
               <Button
                 variant="primary"
                 onClick={() => {
