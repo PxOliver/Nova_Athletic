@@ -36,14 +36,19 @@ public class OrdenController {
     @Autowired
     private AuthService authService;
 
-    // ========== CREAR ORDEN ========== 
+    // ========== CREAR ORDEN ==========
     @PostMapping
-    public ResponseEntity<OrdenResponseDto> crearOrden(
+    public ResponseEntity<?> crearOrden(
             @RequestBody CrearOrdenDto request,
-            @RequestHeader("Authorization") String authorizationHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         try {
-            // 1. Obtener usuario desde el token
+            if (authorizationHeader == null || authorizationHeader.isBlank()) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body("Falta header Authorization");
+            }
+
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
             String username = JwtUtils.getUsernameFromToken(token)
@@ -92,9 +97,16 @@ public class OrdenController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
 
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error al crear la orden: " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al crear la orden");
         }
     }
 
@@ -128,10 +140,16 @@ public class OrdenController {
 
     // ========== OBTENER ÓRDENES DEL USUARIO LOGUEADO ==========
     @GetMapping("/usuario")
-    public ResponseEntity<List<OrdenResponseDto>> obtenerOrdenesUsuario(
-            @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> obtenerOrdenesUsuario(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         try {
+            if (authHeader == null || authHeader.isBlank()) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body("Falta header Authorization");
+            }
+
             String token = authHeader.replace("Bearer ", "").trim();
 
             String username = JwtUtils.getUsernameFromToken(token)
@@ -149,27 +167,44 @@ public class OrdenController {
 
             return ResponseEntity.ok(respuesta);
 
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("No autorizado: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener las órdenes del usuario");
         }
     }
 
     // ========== ACTUALIZAR ESTADO DE ORDEN (ADMIN) ==========
     @PutMapping("/{id}/estado")
-    public ResponseEntity<OrdenResponseDto> actualizarEstadoOrden(
+    public ResponseEntity<?> actualizarEstadoOrden(
             @PathVariable Long id,
             @RequestBody ActualizarEstadoOrdenDto request) {
 
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        try {
+            Pedido pedido = pedidoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
-        pedido.setEstado(request.estado());
-        pedido = pedidoRepository.save(pedido);
+            pedido.setEstado(request.estado());
+            pedido = pedidoRepository.save(pedido);
 
-        List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
+            List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
 
-        OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
-        return ResponseEntity.ok(dto);
+            OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
+            return ResponseEntity.ok(dto);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Error al actualizar estado: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al actualizar estado de la orden");
+        }
     }
 
     // ========== MAPEOS AUXILIARES ==========
