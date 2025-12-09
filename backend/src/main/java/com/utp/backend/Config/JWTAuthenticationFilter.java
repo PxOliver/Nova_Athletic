@@ -57,7 +57,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     // hasRole("ADMIN") espera "ROLE_ADMIN"
                     authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
                 } else {
-                    // fallback: usar las que vengan de UserDetails
+
                     authorities = userDetails.getAuthorities();
                 }
 
