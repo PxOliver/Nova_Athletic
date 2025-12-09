@@ -62,7 +62,6 @@ public class OrdenController {
 
             String token = authorizationHeader.replace("Bearer ", "").trim();
 
-            // ✔ NUEVO: usar objeto jwtUtils (no estático)
             String username = jwtUtils.getUsernameFromToken(token)
                     .orElseThrow(() -> new RuntimeException("Token inválido"));
 
@@ -157,6 +156,46 @@ public class OrdenController {
         return ResponseEntity.ok(dtos);
     }
 
+    // ================== ADMIN: OBTENER TODAS LAS ÓRDENES ==================
+    @GetMapping
+    public ResponseEntity<?> obtenerTodasLasOrdenes() {
+
+        List<Pedido> pedidos = pedidoRepository.findAll();
+
+        List<OrdenResponseDto> dtos = pedidos.stream()
+                .map(p -> {
+                    List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(p.getId());
+                    return mapearPedidoADto(p, detalles, "desconocido");
+                })
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
+    // ================== ADMIN: ACTUALIZAR ESTADO DE ORDEN ==================
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstadoOrden(
+            @PathVariable Long id,
+            @RequestBody ActualizarEstadoDto request) {
+
+        var pedidoOptional = pedidoRepository.findById(id);
+
+        if (pedidoOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Orden no encontrada");
+        }
+
+        Pedido pedido = pedidoOptional.get();
+        pedido.setEstado(request.estado());
+        pedidoRepository.save(pedido);
+
+        List<Detallepedido> detalles = detallePedidoRepository.findByPedidoId(id);
+
+        OrdenResponseDto dto = mapearPedidoADto(pedido, detalles, "desconocido");
+
+        return ResponseEntity.ok(dto);
+    }
+
     // ================== MAPPER ==================
     private OrdenResponseDto mapearPedidoADto(Pedido pedido, List<Detallepedido> detalles, String metodoPago) {
 
@@ -187,5 +226,9 @@ public class OrdenController {
                 pedido.getTotal(),
                 itemsDto
         );
+    }
+
+    // ================== DTO PARA ACTUALIZAR ESTADO ==================
+    public record ActualizarEstadoDto(String estado) {
     }
 }
