@@ -40,27 +40,26 @@ public class SecurityFilterChainConfig {
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
 
-                    // ======== AUTH PÚBLICO ========
+                    // ---------- PÚBLICO ----------
                     .requestMatchers("/api/auth/**").permitAll()
-
-                    // ======== PRODUCTOS / IMÁGENES PÚBLICOS ========
                     .requestMatchers("/api/productos/**").permitAll()
                     .requestMatchers("/api/uploads/**").permitAll()
-
-                    // ======== ÓRDENES ========
-                    // Crear orden: requiere estar logueado
-                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
-
-                    // Órdenes del usuario logueado
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
-
-                    // Todas las órdenes → solo ADMIN (AdminDashboard)
-                    .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
-
-                    // Detalle de una orden por id → público (OrderDetails.jsx)
+                    // Detalle de orden por id (página de agradecimiento / orden/:id)
                     .requestMatchers(HttpMethod.GET, "/api/ordenes/*").permitAll()
 
-                    // Cualquier otra cosa requiere login
+                    // ---------- USUARIO AUTENTICADO ----------
+                    // Crear orden (checkout)
+                    .requestMatchers(HttpMethod.POST, "/api/ordenes").authenticated()
+                    // Órdenes del usuario logueado (/mis-ordenes)
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes/usuario").authenticated()
+
+                    // ---------- ADMIN ----------
+                    // Listado de todas las órdenes (AdminDashboard)
+                    .requestMatchers(HttpMethod.GET, "/api/ordenes").hasRole("ADMIN")
+                    // Actualizar estado de orden (AdminDashboard)
+                    .requestMatchers(HttpMethod.PUT, "/api/ordenes/*/estado").hasRole("ADMIN")
+
+                    // ---------- CUALQUIER OTRO ENDPOINT ----------
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
